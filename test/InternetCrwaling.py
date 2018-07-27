@@ -33,23 +33,20 @@ def splitAddress(fullAddress):
 
 def getRandomExternalLink(startingAddress):
 	html = urlopen(startingAddress)
-
 	bsObj = BeautifulSoup(html, "html.parser")
 
 	externalLinks = getExternalLinks(bsObj, splitAddress(startingAddress)[0])
 
-	for link in externalLinks:
-		print(link)
-
-	#if len(externalLinks) == 0:
-	#	internalLinks = getInternalLinks(startingPage)
-	#	return getNextExternalLInk(internalLinks[random.randint(0, len(internalLinks)-1)])
-	#else:
-	#	return externalLinks[random.randint(0, len(externalLinks)-1)]
+	if len(externalLinks) == 0:
+		#internalLinks = getInternalLinks(startingPage)
+		#return getNextExternalLInk(internalLinks[random.randint(0, len(internalLinks)-1)])
+		print('0')
+	else:
+		return externalLinks[random.randint(0, len(externalLinks)-1)]
 
 def followExternalOnly(startingSite):
 	externalLink = getRandomExternalLink("http://oreilly.com")
-	#print("Random external link is: "+externalLink)
-	# followExternalOnly(externalLink)
+	print("Random external link is: "+externalLink)
+	followExternalOnly(externalLink)
 
 followExternalOnly("http://oreilly.com")
