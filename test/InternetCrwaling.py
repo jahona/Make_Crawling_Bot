@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import re
 import datetime
 import random
+import ssl
 
 pages = set()
 random.seed(datetime.datetime.now())
@@ -32,10 +33,16 @@ def splitAddress(fullAddress):
 	return hostParts
 
 def getRandomExternalLink(startingAddress):
-	html = urlopen(startingAddress)
+	gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+
+	html = urlopen(startingAddress, context=gcontext)
+
 	bsObj = BeautifulSoup(html, "html.parser")
 
 	externalLinks = getExternalLinks(bsObj, splitAddress(startingAddress)[0])
+
+	for link in externalLinks:
+		print(link)
 
 	if len(externalLinks) == 0:
 		internalLinks = getInternalLinks(startingPage)
