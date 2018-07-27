@@ -38,9 +38,8 @@ def getRandomExternalLink(startingAddress):
 	externalLinks = getExternalLinks(bsObj, splitAddress(startingAddress)[0])
 
 	if len(externalLinks) == 0:
-		#internalLinks = getInternalLinks(startingPage)
-		#return getNextExternalLInk(internalLinks[random.randint(0, len(internalLinks)-1)])
-		print('0')
+		internalLinks = getInternalLinks(startingPage)
+		return getNextExternalLInk(internalLinks[random.randint(0, len(internalLinks)-1)])
 	else:
 		return externalLinks[random.randint(0, len(externalLinks)-1)]
 
