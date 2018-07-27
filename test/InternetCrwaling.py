@@ -51,10 +51,10 @@ def getRandomExternalLink(startingAddress):
 	else:
 		return externalLinks[random.randint(0, len(externalLinks)-1)]
 
-def followExternalOnly(startingSite):
-	externalLink = getRandomExternalLink("http://oreilly.com")
+def followExternalOnly(startingAddress):
+	sleep(2)
+	externalLink = getRandomExternalLink(startingAddress)
 	print("Random external link is: "+externalLink)
-	sleep(1)
 	followExternalOnly(externalLink)
 
 followExternalOnly("http://oreilly.com")
