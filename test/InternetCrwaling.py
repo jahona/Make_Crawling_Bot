@@ -4,6 +4,7 @@ import re
 import datetime
 import random
 import ssl
+from time import sleep
 
 pages = set()
 random.seed(datetime.datetime.now())
@@ -53,6 +54,7 @@ def getRandomExternalLink(startingAddress):
 def followExternalOnly(startingSite):
 	externalLink = getRandomExternalLink("http://oreilly.com")
 	print("Random external link is: "+externalLink)
+	sleep(1)
 	followExternalOnly(externalLink)
 
 followExternalOnly("http://oreilly.com")
