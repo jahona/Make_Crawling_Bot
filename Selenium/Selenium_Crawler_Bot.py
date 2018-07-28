@@ -85,7 +85,7 @@ class Selenium_Scraping:
 
 data=open(os.getcwd() + "/.env").read()
 
-selenium_path = data.split()[0].split('=')[1]
+selenium_path = data.split('\n')[0].split('=')[1]
 
 selenium_ins = Selenium_Scraping(selenium_path)
 selenium_ins.followExternalOnly("http://oreilly.com")
