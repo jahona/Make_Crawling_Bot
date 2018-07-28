@@ -3,10 +3,11 @@ import CrawlerBot
 class Bot:
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
+        self.__depth = 0
         pass
 
-    def setStartAddress(self, startAddress):
-        self.__startAddress = startAddress
+    def setAddress(self, address):
+        self.__address = address
         pass
 
     def setKeyword(self, keyword):
@@ -14,17 +15,21 @@ class Bot:
         pass
 
     def bot_start(self):
-        # Google 에 해당 키워드 검색
+        # Google 에 해당 키워드 검색 후 화면 이동
         self.__bot.search_keyword_based_on_google(self.__keyword)
 
+        # Return Google Search List
+        googleLinks = self.__bot.get_google_links()
         # self.__bot.followExternalOnly(self.__startAddress)
 
-startAddress = "https://www.google.co.kr"
+
+# variable
+address = "https://www.google.co.kr"
 keyword = "C언어"
 
 # Bot Setting
 Bot = Bot()
-Bot.setStartAddress(startAddress)
+Bot.setAddress(address)
 Bot.setKeyword(keyword)
 
 # Bot start
