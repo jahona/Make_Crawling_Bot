@@ -82,6 +82,26 @@ class Selenium:
         self.followExternalOnly(externalLink)
         pass
 
+    def go_page_based_on_start_address(self, startAddress):
+        self.__driver.get(startAddress)
+        pass
+
+    def search_keyword_based_on_google(self, keyword):
+        self.go_page_based_on_start_address('https://www.google.co.kr')
+        self.__driver.find_element_by_id('lst-ib').send_keys(keyword)
+        self.__driver.find_element_by_xpath('//*[@id="tsf"]/div[2]/div[3]/center/input[1]').click()
+        pass
+
+    def get_current_url(self):
+        return self.__driver.current_url
+
+    def get_page_source(self):
+        return self.__driver.page_source
+
+    def get_bs_obj(self):
+        pageSource = self.get_page_source()
+        return BeautifulSoup(pageSource)
+
     def quit(self):
         self.__driver.quit()
         pass
