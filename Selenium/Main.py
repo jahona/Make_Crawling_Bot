@@ -1,4 +1,3 @@
-import os
 import CrawlerBot
 
 class Bot:
