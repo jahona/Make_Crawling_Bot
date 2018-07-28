@@ -20,8 +20,21 @@ class Bot:
 
         # Return Google Search List
         googleLinks = self.__bot.get_google_links()
-        # self.__bot.followExternalOnly(self.__startAddress)
 
+        # googleLinks에 있는 link들을 탐색
+        for link in googleLinks:
+            # 해당 페이지의 page source get
+            self.__bot.go_page(link)
+            pageSource = self.__bot.get_page_source()
+            bsObj = self.__bot.get_bs_obj(pageSource)
+
+            # 외부 링크를 배제를 위한 host 부분 추출
+            excludeUrl = self.__bot.split_address(link)
+
+            externalLinks = self.__bot.get_external_links(bsObj, excludeUrl)
+
+            for i in externalLinks:
+                print(i)
 
 # variable
 address = "https://www.google.co.kr"
