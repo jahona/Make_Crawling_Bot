@@ -93,29 +93,7 @@ class Selenium:
                     if link.attrs['href'] not in internalLinks:
                         internalLinks.append(link.attrs['href'])
                 else:
-                    if fullUrl+ink.attrs['href'] not in internalLinks:
+                    if fullUrl+link.attrs['href'] not in internalLinks:
                         internalLinks.append(fullUrl+link.attrs['href'])
 
         return internalLinks
-
-    # 키워드가 포함된 문장 얻기 미완성
-    def get_keyword_text(self, bsObj, current_url):
-        keyword_text = []
-        pattern = re.compile("^\>\.$")
-
-        pageSource = self.__driver.page_source
-        bsObj = BeautifulSoup(pageSource)
-
-        document = bsObj.findAll("div").get_text()
-        # print(document)
-
-        # document = bsObj.get_text()
-        document = re.sub('\n+', "\n", document)
-        document = re.sub(" +", " ", document)
-        print(document)
-        # document.split('\n')
-        print("------------------------------------------------------------------------------------------------------------")
-        # for sentence in document:
-        #     print(sentence)
-
-        return keyword_text
