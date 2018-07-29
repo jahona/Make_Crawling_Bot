@@ -79,7 +79,7 @@ class Selenium:
         return externalLinks
 
     # 내부링크 리스트 얻기
-    def get_internal_links(self, bsObj, includeUrl):
+    def get_internal_links(self, bsObj, includeUrl, fullUrl):
         internalLinks = []
         pattern = re.compile("^(/|.*"+includeUrl+")")
 
@@ -89,7 +89,10 @@ class Selenium:
         # /로 시작하거나 includeUrl이 들어있는 링크를 모두 찾습니다.
         for link in bsObj.findAll('a', href=pattern):
             if link.attrs['href'] is not None:
-                if link.attrs['href'] not in internalLinks:
-                    internalLinks.append(link.attrs['href'])
+                if fullUrl+link.attrs['href'] not in internalLinks:
+                    if "http" in link.attrs['href']:
+                        internalLinks.append(link.attrs['href'])
+                    else:
+                        internalLinks.append(fullUrl+link.attrs['href'])
 
         return internalLinks
