@@ -77,3 +77,19 @@ class Selenium:
                     externalLinks.append(link.attrs['href'])
 
         return externalLinks
+
+    # 내부링크 리스트 얻기
+    def get_internal_links(self, bsObj, includeUrl):
+        internalLinks = []
+        pattern = re.compile("^(/|.*"+includeUrl+")")
+
+        pageSource = self.__driver.page_source
+        bsObj = BeautifulSoup(pageSource)
+
+        # /로 시작하거나 includeUrl이 들어있는 링크를 모두 찾습니다.
+        for link in bsObj.findAll('a', href=pattern):
+            if link.attrs['href'] is not None:
+                if link.attrs['href'] not in internalLinks:
+                    internalLinks.append(link.attrs['href'])
+
+        return internalLinks

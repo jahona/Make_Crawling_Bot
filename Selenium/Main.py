@@ -33,8 +33,15 @@ class Bot:
 
             externalLinks = self.__bot.get_external_links(bsObj, excludeUrl)
 
-            for i in externalLinks:
-                print(i)
+            internalLinks = self.__bot.get_internal_links(bsObj, excludeUrl)
+
+            for externalLink in externalLinks:
+                print("외부링크: "+externalLink)
+
+            print("------------------------------------------------------------------------------------------------------------")
+
+            for internalLink in internalLinks:
+                print("내부링크: "+internalLink)
 
 # variable
 address = "https://www.google.co.kr"
