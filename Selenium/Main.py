@@ -30,27 +30,17 @@ class Bot:
 
             # 외부 링크를 배제를 위한 host 부분 추출
             excludeUrl = self.__bot.split_address(link)
+            
+            self.__bot.get_external_links(bsObj, excludeUrl, keyword)
 
-            externalLinks = self.__bot.get_external_links(bsObj, excludeUrl)
+            self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword)
 
-            internalLinks = self.__bot.get_internal_links(bsObj, excludeUrl, link)
+            self.__bot.get_keyword_text(bsObj, excludeUrl, keyword)
 
-            for externalLink in externalLinks:
-                print("외부링크: "+externalLink)
-
-            print("------------------------------------------------------------------------------------------------------------")
-
-            for internalLink in internalLinks:
-                print("내부링크: "+internalLink)
-
-            # texts = self.__bot.get_keyword_text(bsObj, excludeUrl)
-
-            # for text in texts:
-            #     print("문장: "+text)
 
 # variable
 address = "https://www.google.co.kr"
-keyword = "C언어"
+keyword = input("검색어를 입력하세요: ")
 
 # Bot Setting
 Bot = Bot()
