@@ -6,6 +6,25 @@ import string
 import operator
 import pprint
 
+commonWords = ["the", "be", "and", "of", "a", "in", "to", "have", "it",
+"it", "that", "for", "you", "he", "with", "on", "do", "say", "this",
+"they", "is", "an", "at", "but", "we", "his", "from", "that", "not",
+"by", "would", "her", "all", "my", "make", "about", "know", "will",
+"as", "up", "one", "time", "has", "been", "there", "year", "so",
+"think", "when", "which", "them", "some", "me", "people", "take",
+"out", "into", "just", "see", "him", "your", "come", "could", "now",
+"than", "like", "other", "how", "then", "its", "out", "two", "more",
+"these", "want", "way", "look", "first", "also", "new", "because",
+"day", "more", "use", "no", "man", "find", "here", "thing", "give",
+"many", "well"]
+
+def isCommon(ngram):
+    for word in ngram:
+        if word in commonWords:
+            return True
+
+    return False
+
 def cleanInput(input):
     input = re.sub('\n+', " ", input)
     input = re.sub('\[[0-9]*\]', "", input)
@@ -37,5 +56,9 @@ ngrams = ngrams(content, 2)
 ngrams = sorted(ngrams.items(), key=operator.itemgetter(1), reverse=True)
 
 pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(ngrams)
+
+for ngram in ngrams:
+    if not isCommon(ngram):
+        pp.pprint(ngram)
+
 print("2-grams count is: " + str(len(ngrams)))
