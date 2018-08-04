@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import ssl
 import re
 import string
+import pprint
 
 def cleanInput(input):
     input = re.sub('\n+', " ", input)
@@ -29,6 +30,16 @@ gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
 html = urlopen("http://en.wikipedia.org/wiki/Python_(programming_language)", context=gcontext)
 bsObj = BeautifulSoup(html, "html.parser")
 content = bsObj.find("div", {"id":"mw-content-text"}).get_text()
-ngramsData = ngrams(content, 2)
-print(ngramsData)
-print("2-grams count is: " + str(len(ngramsData)))
+ngrams = ngrams(content, 2)
+ngrams = sorted(ngrams, key=lambda t: t[1], reverse=True)
+
+pp = pprint.PrettyPrinter(indent=4)
+w_count = {};
+for ngram in ngrams:
+    try:
+        w_count[ngram[1]] += 1
+    except:
+        w_count[ngram[1]]=1
+
+pp.pprint(w_count)
+print("2-grams count is: " + str(len(ngrams)))
