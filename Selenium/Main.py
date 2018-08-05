@@ -36,7 +36,10 @@ class Bot:
         # googleLinks에 있는 link들을 탐색
         for link in googleLinks:
             # 해당 페이지의 page source get
-            self.__bot.go_page(link)
+            if(self.__bot.go_page(link)):
+                pass
+            else:
+                continue
             pageSource = self.__bot.get_page_source()
             bsObj = self.__bot.get_bs_obj(pageSource)
 

@@ -47,8 +47,8 @@ class Selenium:
         try:
             self.__driver.get(url)
             # self.__driver.refresh()
-        except:
-            self.__driver.refresh()
+        except TimeoutException:
+            pass
         pass
 
     def get_current_url(self):
