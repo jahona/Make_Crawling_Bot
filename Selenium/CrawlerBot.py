@@ -4,11 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import ssl
 from time import sleep
-import random
-import datetime
 import os
-
-random.seed(datetime.datetime.now())
 
 class Selenium:
     def __init__(self):
@@ -22,6 +18,7 @@ class Selenium:
         selenium_path = data.split('\n')[0].split('=')[1]
         # selenium_path = os.getcwd()+"/chromedriver"
         self.__driver = webdriver.Chrome(selenium_path, chrome_options=options)
+        self.__driver.set_page_load_timeout(10)
         pass
 
     def split_address(self, fullAddress):
@@ -47,7 +44,11 @@ class Selenium:
         return googleLinks
 
     def go_page(self, url):
-        self.__driver.get(url)
+        try:
+            self.__driver.get(url)
+            # self.__driver.refresh()
+        except:
+            self.__driver.refresh()
         pass
 
     def get_current_url(self):
@@ -66,8 +67,6 @@ class Selenium:
     # 외부링크 리스트 얻기
     def get_external_links(self, bsObj, excludeUrl, keyword):
         externalLinks = []
-        now = datetime.datetime.now()
-        date = "%04d%02d%02d" % (now.year , now.month , now.day)
         pattern = re.compile("^(http|www)((?!" + excludeUrl + ").)*$")
 
         pageSource = self.__driver.page_source
@@ -79,21 +78,11 @@ class Selenium:
                 if link.attrs['href'] not in externalLinks:
                     externalLinks.append(link.attrs['href'])
 
-        file = open(os.getcwd()+"/"+date+"_"+keyword+"_외부링크.txt", 'a', encoding='UTF-8')
-
-        for link in externalLinks:
-            data = link+"\n"
-            file.write(data)
-
-        file.close()
-
-        pass
+        return externalLinks
 
     # 내부링크 리스트 얻기
     def get_internal_links(self, bsObj, includeUrl, fullUrl, keyword):
         internalLinks = []
-        now = datetime.datetime.now()
-        date = "%04d%02d%02d" % (now.year , now.month , now.day)
         pattern = re.compile("^(/|.*"+includeUrl+")")
 
         pageSource = self.__driver.page_source
@@ -112,20 +101,11 @@ class Selenium:
                         else:
                             internalLinks.append(fullUrl.split("/")[0]+"//"+includeUrl+link.attrs['href'])
 
-        file = open(os.getcwd()+"/"+date+"_"+keyword+"_내부링크.txt", 'a', encoding='UTF-8')
-
-        for link in internalLinks:
-            data = link+"\n"
-            file.write(data)
-
-        file.close()
-
-        pass
+        return internalLinks
 
     # 키워드가 포함된 문장 얻기 미완성
     def get_keyword_text(self, bsObj, current_url, keyword):
-        now = datetime.datetime.now()
-        date = "%04d%02d%02d" % (now.year , now.month , now.day)
+        list = []
 
         pageSource = self.__driver.page_source
         bsObj = BeautifulSoup(pageSource)
@@ -134,14 +114,7 @@ class Selenium:
         document = re.sub('\n+', '\n', document)
         document = re.sub(' +', ' ', document)
 
-        file = open(os.getcwd()+"/"+date+"_"+keyword+"_태그별문장.txt", 'a', encoding='UTF-8')
-
         for sentence in document.split('\n'):
-            if keyword in sentence:
-                file.write(str(sentence))
-                file.write("\n-------------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
-                # print(sentence)
-                # print("--------------------------------------------------------------------------------------------------------")
-        file.close()
+            list.append(sentence)
 
-        pass
+        return list
