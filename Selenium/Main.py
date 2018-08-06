@@ -1,4 +1,9 @@
 import CrawlerBot
+import datetime
+import random
+import os
+
+random.seed(datetime.datetime.now())
 
 class Bot:
     def __init__(self):
@@ -21,22 +26,50 @@ class Bot:
         # Return Google Search List
         googleLinks = self.__bot.get_google_links()
 
+        now = datetime.datetime.now()
+        date = now.strftime('%Y%m%d_%H%M%S')
+
+        externalLinks = []
+        internalLinks = []
+        keywordLinks = []
+
         # googleLinks에 있는 link들을 탐색
         for link in googleLinks:
             # 해당 페이지의 page source get
-            self.__bot.go_page(link)
+            if(self.__bot.go_page(link)):
+                pass
+            else:
+                continue
             pageSource = self.__bot.get_page_source()
             bsObj = self.__bot.get_bs_obj(pageSource)
 
             # 외부 링크를 배제를 위한 host 부분 추출
             excludeUrl = self.__bot.split_address(link)
-            
-            self.__bot.get_external_links(bsObj, excludeUrl, keyword)
 
-            self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword)
+            for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
+                if list not in externalLinks:
+                    externalLinks.append(list)
+            for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
+                if list not in internalLinks:
+                    internalLinks.append(list)
+            for list in self.__bot.get_keyword_text(bsObj, link, keyword):
+                if list not in keywordLinks:
+                    keywordLinks.append(list)
 
-            self.__bot.get_keyword_text(bsObj, excludeUrl, keyword)
+        exfile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_외부링크.txt", 'w', encoding='UTF-8')
+        infile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_내부링크.txt", 'w', encoding='UTF-8')
+        keyfile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_태그별문장.txt", 'w', encoding='UTF-8')
 
+        for list in externalLinks:
+            exfile.write(str(list)+"\n")
+        for list in internalLinks:
+            infile.write(str(list)+"\n")
+        for list in keywordLinks:
+            keyfile.write(str(list)+"\n\n")
+
+        exfile.close()
+        infile.close()
+        keyfile.close()
 
 # variable
 address = "https://www.google.co.kr"
