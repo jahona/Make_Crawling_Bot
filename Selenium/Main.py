@@ -49,7 +49,7 @@ class Bot:
                 for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
                     if list not in internalLinks:
                         internalLinks.append(list)
-                for list in self.__bot.get_keyword_text(bsObj, link, keyword):
+                for list in self.__bot.get_keyword_text_in_tag(bsObj, link, keyword):
                     if list not in keywordLinks:
                         keywordLinks.append(list)
             else:

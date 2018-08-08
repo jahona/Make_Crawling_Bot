@@ -104,8 +104,8 @@ class Selenium:
 
         return internalLinks
 
-    # 키워드가 포함된 문장 얻기 미완성
-    def get_keyword_text(self, bsObj, current_url, keyword):
+    # 키워드를 포함한 태그에 있는 문자열 추출
+    def get_keyword_text_in_tag(self, bsObj, current_url, keyword):
         list = []
 
         pageSource = self.__driver.page_source
