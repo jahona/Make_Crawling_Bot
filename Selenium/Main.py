@@ -37,24 +37,23 @@ class Bot:
         for link in googleLinks:
             # 해당 페이지의 page source get
             if(self.__bot.go_page(link)):
-                pass
+                pageSource = self.__bot.get_page_source()
+                bsObj = self.__bot.get_bs_obj(pageSource)
+
+                # 외부 링크를 배제를 위한 host 부분 추출
+                excludeUrl = self.__bot.split_address(link)
+
+                for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
+                    if list not in externalLinks:
+                        externalLinks.append(list)
+                for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
+                    if list not in internalLinks:
+                        internalLinks.append(list)
+                for list in self.__bot.get_keyword_text(bsObj, link, keyword):
+                    if list not in keywordLinks:
+                        keywordLinks.append(list)
             else:
                 continue
-            pageSource = self.__bot.get_page_source()
-            bsObj = self.__bot.get_bs_obj(pageSource)
-
-            # 외부 링크를 배제를 위한 host 부분 추출
-            excludeUrl = self.__bot.split_address(link)
-
-            for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
-                if list not in externalLinks:
-                    externalLinks.append(list)
-            for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
-                if list not in internalLinks:
-                    internalLinks.append(list)
-            for list in self.__bot.get_keyword_text(bsObj, link, keyword):
-                if list not in keywordLinks:
-                    keywordLinks.append(list)
 
         exfile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_외부링크.txt", 'w', encoding='UTF-8')
         infile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_내부링크.txt", 'w', encoding='UTF-8')

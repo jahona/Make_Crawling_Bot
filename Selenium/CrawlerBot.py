@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import re
@@ -48,8 +49,8 @@ class Selenium:
             self.__driver.get(url)
             # self.__driver.refresh()
         except TimeoutException:
-            pass
-        pass
+            return 0
+        return 1
 
     def get_current_url(self):
         return self.__driver.current_url
