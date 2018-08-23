@@ -45,12 +45,8 @@ class Selenium:
         return googleLinks
 
     def go_page(self, url):
-        try:
-            self.__driver.get(url)
-            # self.__driver.refresh()
-        except TimeoutException:
-            return 0
-        return 1
+        self.__driver.get(url)
+        pass
 
     def get_current_url(self):
         return self.__driver.current_url

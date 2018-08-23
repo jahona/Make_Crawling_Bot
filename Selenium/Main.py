@@ -3,6 +3,8 @@ import datetime
 import random
 import os
 import TextRank
+import sys
+import timeit
 
 random.seed(datetime.datetime.now())
 
@@ -32,41 +34,55 @@ class Bot:
 
         externalLinks = []
         internalLinks = []
-        keywords = []
-
-        count = 0
 
         # googleLinks에 있는 link들을 탐색
         for link in googleLinks:
             # 해당 페이지의 page source get
+            self.__bot.go_page(link)
+
+            pageSource = self.__bot.get_page_source()
+            bsObj = self.__bot.get_bs_obj(pageSource)
+
+            # 외부 링크를 배제를 위한 host 부분 추출
+            excludeUrl = self.__bot.split_address(link)
+
+            for list in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
+                if list not in externalLinks:
+                    externalLinks.append(list)
+            for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
+                if list not in internalLinks:
+                    internalLinks.append(list)
+
+        # file open
+        exfile = open(os.getcwd()+"/"+str(date)+"_"+self.__keyword+"_TR결과.txt", 'w', encoding='UTF-8')
+
+        # 링크들에 대해 TR 수행
+        allLinks = googleLinks + externalLinks + internalLinks
+
+        count = 0
+
+        print('탐색할 링크의 개수', len(allLinks))
+        for link in allLinks:
             try:
-                if(self.__bot.go_page(link)):
-                    pageSource = self.__bot.get_page_source()
-                    bsObj = self.__bot.get_bs_obj(pageSource)
+                print('-----------------------------------------------------')
+                count = count + 1
+                print('link ' + str(count) + ' : ' + link)
 
-                    count = count + 1
-                    print('link ' + str(count) + ' : ' + link)
+                textrank = TextRank.TextRank(link)
 
-                    textrank = TextRank.TextRank(link)
-                    for row in textrank.summarize(3):
-                        print(row)
-                        print()
-
-                    print('keywords :', textrank.keywords())
+                for row in textrank.summarize(3):
+                    print(row)
                     print()
-                    # # 외부 링크를 배제를 위한 host 부분 추출
-                    # excludeUrl = self.__bot.split_address(link)
-                    #
-                    # for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
-                    #     if list not in externalLinks:
-                    #         externalLinks.append(list)
-                    # for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
-                    #     if list not in internalLinks:
-                    #         internalLinks.append(list)
-                else:
-                    continue
+
+                print('keywords :', textrank.keywords())
+                print()
+                print('-----------------------------------------------------')
             except:
-                pass
+                print('TR 중 Error 발생')
+                continue
+
+        print('Success... Good')
+        exfile.close()
 
         # 외부링크에 대해서 필터를 거친다.
         ## 내용 부분을 뽑아낸다.
@@ -82,12 +98,15 @@ class Bot:
 
 # variable
 address = "https://www.google.co.kr"
-keyword = input("검색어를 입력하세요: ")
+# keyword = input("검색어를 입력하세요: ")
 
 # Bot Setting
 Bot = Bot()
 Bot.setAddress(address)
-Bot.setKeyword(keyword)
+Bot.setKeyword('c언어')
 
 # Bot start
+start = timeit.default_timer()
 Bot.bot_start()
+stop = timeit.default_timer()
+print(stop - start)
