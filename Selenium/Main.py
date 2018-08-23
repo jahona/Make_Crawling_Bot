@@ -2,6 +2,7 @@ import CrawlerBot
 import datetime
 import random
 import os
+import TextRank
 
 random.seed(datetime.datetime.now())
 
@@ -31,44 +32,53 @@ class Bot:
 
         externalLinks = []
         internalLinks = []
-        keywordLinks = []
+        keywords = []
+
+        count = 0
 
         # googleLinks에 있는 link들을 탐색
         for link in googleLinks:
             # 해당 페이지의 page source get
-            if(self.__bot.go_page(link)):
-                pageSource = self.__bot.get_page_source()
-                bsObj = self.__bot.get_bs_obj(pageSource)
+            try:
+                if(self.__bot.go_page(link)):
+                    pageSource = self.__bot.get_page_source()
+                    bsObj = self.__bot.get_bs_obj(pageSource)
 
-                # 외부 링크를 배제를 위한 host 부분 추출
-                excludeUrl = self.__bot.split_address(link)
+                    count = count + 1
+                    print('link ' + str(count) + ' : ' + link)
 
-                for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
-                    if list not in externalLinks:
-                        externalLinks.append(list)
-                for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
-                    if list not in internalLinks:
-                        internalLinks.append(list)
-                for list in self.__bot.get_keyword_text_in_tag(bsObj, link, keyword):
-                    if list not in keywordLinks:
-                        keywordLinks.append(list)
-            else:
-                continue
+                    textrank = TextRank.TextRank(link)
+                    for row in textrank.summarize(3):
+                        print(row)
+                        print()
 
-        exfile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_외부링크.txt", 'w', encoding='UTF-8')
-        infile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_내부링크.txt", 'w', encoding='UTF-8')
-        keyfile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_태그별문장.txt", 'w', encoding='UTF-8')
+                    print('keywords :', textrank.keywords())
+                    print()
+                    # # 외부 링크를 배제를 위한 host 부분 추출
+                    # excludeUrl = self.__bot.split_address(link)
+                    #
+                    # for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
+                    #     if list not in externalLinks:
+                    #         externalLinks.append(list)
+                    # for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
+                    #     if list not in internalLinks:
+                    #         internalLinks.append(list)
+                else:
+                    continue
+            except:
+                pass
 
-        for list in externalLinks:
-            exfile.write(str(list)+"\n")
-        for list in internalLinks:
-            infile.write(str(list)+"\n")
-        for list in keywordLinks:
-            keyfile.write(str(list)+"\n\n")
+        # 외부링크에 대해서 필터를 거친다.
+        ## 내용 부분을 뽑아낸다.
+        ###
+        ## 내용 부분에 있는 링크들만을 get 한다.
 
-        exfile.close()
-        infile.close()
-        keyfile.close()
+        # 내부링크에 대해서 필터를 거친다.
+
+        # 걸러진 링크들에 한해서 TR 알고리즘을 돌린다.
+
+        # 키워드와 요약된 문장을 출력한다.
+
 
 # variable
 address = "https://www.google.co.kr"

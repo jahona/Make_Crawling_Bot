@@ -70,12 +70,15 @@ class GraphMatrix(object):
 
     # 명사로 이루어진 sentence를 입력받아 tfidf matrix를 만든 후 Sentence graph를 리턴
     def build_sent_graph(self, sentence):
-        # fit_transform 를 이용해 sentence(=raw data)를 tfidf matrix로 변환
-        tfidf_mat = self.tfidf.fit_transform(sentence).toarray()
-        # numpy의 dot 함수로 두 행렬의 곱을 통해 graph_sentence를 반환
-        # tfidf_mat.T는 Transpose, 즉 전치행렬을 의미한다.
-        self.graph_sentence = np.dot(tfidf_mat, tfidf_mat.T)
-        return self.graph_sentence
+        try:
+            # fit_transform 를 이용해 sentence(=raw data)를 tfidf matrix로 변환
+            tfidf_mat = self.tfidf.fit_transform(sentence).toarray()
+            # numpy의 dot 함수로 두 행렬의 곱을 통해 graph_sentence를 반환
+            # tfidf_mat.T는 Transpose, 즉 전치행렬을 의미한다.
+            self.graph_sentence = np.dot(tfidf_mat, tfidf_mat.T)
+            return self.graph_sentence
+        except:
+            pass
 
     # 명사로 이루어진 sentence를 입력받아 matrix 생성 후 word graph와 {idx:word} 형태의 딕셔너리를 리턴
     def build_words_graph(self, sentence):
@@ -110,69 +113,70 @@ Step4. Text Lank Class 구현
 '''
 class TextRank(object):
     def __init__(self, text):
-        self.sent_tokenize = SentenceTokenizer()
+        try:
+            self.sent_tokenize = SentenceTokenizer()
 
-        if text[:5] in ('http:', 'https'):
-            self.sentences = self.sent_tokenize.url2sentences(text)
-        else:
-            self.sentences = self.sent_tokenize.text2sentences(text)
+            if text[:5] in ('http:', 'https'):
+                self.sentences = self.sent_tokenize.url2sentences(text)
+            else:
+                self.sentences = self.sent_tokenize.text2sentences(text)
 
-        self.nouns = self.sent_tokenize.get_nouns(self.sentences)
+            self.nouns = self.sent_tokenize.get_nouns(self.sentences)
 
-        self.graph_matrix = GraphMatrix()
-        self.sent_graph = self.graph_matrix.build_sent_graph(self.nouns)
-        self.words_graph, self.idx2word = self.graph_matrix.build_words_graph(self.nouns)
+            self.graph_matrix = GraphMatrix()
+            self.sent_graph = self.graph_matrix.build_sent_graph(self.nouns)
+            self.words_graph, self.idx2word = self.graph_matrix.build_words_graph(self.nouns)
 
-        self.rank = Rank()
-        self.sent_rank_idx = self.rank.get_ranks(self.sent_graph)
-        self.sorted_sent_rank_idx = sorted(self.sent_rank_idx, key=lambda k: self.sent_rank_idx[k], reverse=True)
+            self.rank = Rank()
+            self.sent_rank_idx = self.rank.get_ranks(self.sent_graph)
+            self.sorted_sent_rank_idx = sorted(self.sent_rank_idx, key=lambda k: self.sent_rank_idx[k], reverse=True)
 
-        self.word_rank_idx = self.rank.get_ranks(self.words_graph)
-        self.sorted_word_rank_idx = sorted(self.word_rank_idx, key=lambda k: self.word_rank_idx[k], reverse=True)
+            self.word_rank_idx = self.rank.get_ranks(self.words_graph)
+            self.sorted_word_rank_idx = sorted(self.word_rank_idx, key=lambda k: self.word_rank_idx[k], reverse=True)
+        except:
+            pass
 
     def summarize(self, sent_num=3):
-        summary = []
-        index=[]
-        for idx in self.sorted_sent_rank_idx[:sent_num]:
-            index.append(idx)
+        try:
+            summary = []
+            index=[]
+            for idx in self.sorted_sent_rank_idx[:sent_num]:
+                index.append(idx)
 
-        index.sort()
+            index.sort()
 
-        for idx in index:
-            summary.append(self.sentences[idx])
+            for idx in index:
+                summary.append(self.sentences[idx])
 
-        return summary
+            return summary
+        except:
+            pass
 
     def keywords(self, word_num=10):
-        rank = Rank()
-        rank_idx = rank.get_ranks(self.words_graph)
-        sorted_rank_idx = sorted(rank_idx, key=lambda k: rank_idx[k], reverse=True)
+        try:
+            rank = Rank()
+            rank_idx = rank.get_ranks(self.words_graph)
+            sorted_rank_idx = sorted(rank_idx, key=lambda k: rank_idx[k], reverse=True)
 
-        keywords = []
-        index=[]
+            keywords = []
+            index=[]
 
-        for idx in sorted_rank_idx[:word_num]:
-            index.append(idx)
+            for idx in sorted_rank_idx[:word_num]:
+                index.append(idx)
 
-        #index.sort()
-        for idx in index:
-            keywords.append(self.idx2word[idx])
+            #index.sort()
+            for idx in index:
+                keywords.append(self.idx2word[idx])
 
-        return keywords
+            return keywords
+        except:
+            pass
 
-def extraction_keywords(url):
-    url = 'url'
-    textrank = TextRank(url)
-
-    print('keywords :',textrank.keywords())
-
-def content_summarize():
-    for row in textrank.summarize(3):
-        print(row)
-        print()
-
-def check_keywords_association(inputKeywords, TargetKeywords):
-    if TargetKeywords in inputKeywords:
-        return True;
-
-    return False;
+# 사용방법
+# url = 'https://namu.wiki/w/C(%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%20%EC%96%B8%EC%96%B4)'
+# textrank = TextRank(url)
+# for row in textrank.summarize(3):
+#     print(row)
+#     print()
+#
+# print('keywords :',textrank.keywords())
