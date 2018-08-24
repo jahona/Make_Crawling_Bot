@@ -56,10 +56,41 @@ class Bot:
         # file open
         exfile = open(os.getcwd()+"/"+str(date)+"_"+self.__keyword+"_TR결과.txt", 'w', encoding='UTF-8')
 
-        # 링크들에 대해 TR 수행
-        allLinks = googleLinks + externalLinks + internalLinks
-
         count = 0
+
+        # 먼저, 구글 검색 리스트로부터 얻은 링크들을 TR 수행
+        baseKeywordsList = []
+
+        print('구글 리스트에서 탐색할 링크의 개수', len(googleLinks))
+        for link in googleLinks:
+            try:
+                print('-----------------------------------------------------')
+                count = count + 1
+                print('link ' + str(count) + ' : ' + link)
+
+                textrank = TextRank.TextRank(link)
+
+                for row in textrank.summarize(3):
+                    print(row)
+                    print()
+
+                keywords = textrank.keywords()
+
+                for keyword in keywords:
+                    baseKeywordsList.append(keyword)
+
+                print('keywords :', keywords)
+                print()
+
+                print('-----------------------------------------------------')
+            except:
+                print('TR 중 Error 발생')
+                continue
+
+        baseKeywordsSet = set(baseKeywordsList)
+
+        # 외부, 내부 링크들에 대해 TR 수행
+        allLinks = externalLinks + internalLinks
 
         print('탐색할 링크의 개수', len(allLinks))
         for link in allLinks:
@@ -74,8 +105,13 @@ class Bot:
                     print(row)
                     print()
 
-                print('keywords :', textrank.keywords())
+                keywords = textrank.keywords()
+
+                print('keywords :', keywords)
                 print()
+
+                intersection = baseKeywordsSet & set(keywords)
+                print(intersection)
                 print('-----------------------------------------------------')
             except:
                 print('TR 중 Error 발생')
@@ -84,17 +120,11 @@ class Bot:
         print('Success... Good')
         exfile.close()
 
-        # 외부링크에 대해서 필터를 거친다.
-        ## 내용 부분을 뽑아낸다.
-        ###
-        ## 내용 부분에 있는 링크들만을 get 한다.
+        # 문서랑 검색어와의 연관도를 판단함
+        ## 문서 TR 산출물인 키워드랑 검색어랑 비교를 해야함
+        ### 구글 링크 리스트에서 얻은 키워드들을 기준으로 하여 외부링크, 내부링크로부터 얻는 문서의 키워드랑 비교
 
-        # 내부링크에 대해서 필터를 거친다.
-
-        # 걸러진 링크들에 한해서 TR 알고리즘을 돌린다.
-
-        # 키워드와 요약된 문장을 출력한다.
-
+        # 쓰레드 해서 속도 향상
 
 # variable
 address = "https://www.google.co.kr"
