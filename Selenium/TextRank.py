@@ -1,6 +1,6 @@
-from newspaper import Article
+import C_article
 from konlpy.tag import Kkma
-from konlpy.tag import Twitter
+from konlpy.tag import Okt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
@@ -12,20 +12,24 @@ Step1. 문서 타입에 따른 문장 단위로 분리
 class SentenceTokenizer(object):
     def __init__(self):
         self.kkma = Kkma()
-        self.twitter = Twitter()
-        self.stopwords = ['중인' ,'만큼', '마찬가지', '꼬집었', "연합뉴스", "데일리", "동아일보", "중앙일보", "조선일보", "기자"
-,"아", "휴", "아이구", "아이쿠", "아이고", "어", "나", "우리", "저희", "따라", "의해", "을", "를", "에", "의", "가",]
+        self.Okt = Okt()
+        self.stopwords = ['중인' ,'만큼', '마찬가지', '꼬집었',"아", "휴", "아이구", "아이쿠", "아이고", "어",
+        "나", "우리", "저희", "따라", "의해", "을", "를", "에", "의", "가", "때문", "경우", "다른", "통해", "조금",
+        "자신", "편집", "초기", "사용", "이용"]
 
 
     # url 주소를 받아 기사내용 추출.
-    def url2sentences(self, url):
-        article = Article(url, language='ko') # newpaper
-        article.download()
+    def url2sentences(self, page_source):
+        print("asd")
+        article = C_article.Article(language='ko') # newpaper
+        print("asd")
+        article.set_html(page_source)
+        print("asd")
         article.parse()
+        print("asd")
 
         # kkma를 이용해 문장단위로 분리하여 배열 리턴
         sentences = self.kkma.sentences(article.text)
-
         for idx in range(0, len(sentences)):
             if len(sentences[idx]) <= 10:
                 sentences[idx-1] += (' ' + sentences[idx])
@@ -43,12 +47,12 @@ class SentenceTokenizer(object):
 
         return sentences
 
-    # sentences 로부터 Twitter.nouns()를 이용하여 명사 추출 후 배열 리턴
+    # sentences 로부터 Okt.nouns()를 이용하여 명사 추출 후 배열 리턴
     def get_nouns(self, sentences):
         nouns = []
         for sentence in sentences:
             if sentence is not '':
-                nouns.append(' '.join([noun for noun in self.twitter.nouns(str(sentence))
+                nouns.append(' '.join([noun for noun in self.Okt.nouns(str(sentence))
                 if noun not in self.stopwords and len(noun) > 1]))
 
         return nouns
@@ -112,14 +116,11 @@ class Rank(object):
 Step4. Text Lank Class 구현
 '''
 class TextRank(object):
-    def __init__(self, text):
+    def __init__(self, page_source):
         try:
             self.sent_tokenize = SentenceTokenizer()
 
-            if text[:5] in ('http:', 'https'):
-                self.sentences = self.sent_tokenize.url2sentences(text)
-            else:
-                self.sentences = self.sent_tokenize.text2sentences(text)
+            self.sentences = self.sent_tokenize.url2sentences(page_source)
 
             self.nouns = self.sent_tokenize.get_nouns(self.sentences)
 
