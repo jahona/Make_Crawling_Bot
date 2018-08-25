@@ -134,7 +134,6 @@ class TextRank(object):
             self.word_rank_idx = self.rank.get_ranks(self.words_graph)
             self.sorted_word_rank_idx = sorted(self.word_rank_idx, key=lambda k: self.word_rank_idx[k], reverse=True)
         except:
-            print('TextRank 에러 발견 None Type 리턴')
             return None
 
     def summarize(self, sent_num=3):

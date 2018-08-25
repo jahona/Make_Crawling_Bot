@@ -19,7 +19,7 @@ class Selenium:
         selenium_path = data.split('\n')[0].split('=')[1]
         # selenium_path = os.getcwd()+"/chromedriver"
         self.__driver = webdriver.Chrome(selenium_path, chrome_options=options)
-        self.__driver.set_page_load_timeout(10)
+        self.__driver.set_page_load_timeout(20)
         pass
 
     def split_address(self, fullAddress):
