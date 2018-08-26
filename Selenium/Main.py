@@ -13,7 +13,7 @@ from time import sleep
 logger = logging.getLogger()
 random.seed(datetime.datetime.now())
 
-class Bot(QMainWindow, MainWindow.Ui_MainWindow):
+class Bot():
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
         pass
@@ -192,7 +192,6 @@ address = "https://www.google.co.kr"
 # keyword = input("검색어를 입력하세요: ")
 
 # Bot Setting
-app = QApplication(sys.argv)
 Bot = Bot()
 Bot.setAddress(address)
 
