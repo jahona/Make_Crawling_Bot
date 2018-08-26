@@ -1,10 +1,11 @@
-from newspaper import Article
+# from newspaper import Article
 from konlpy.tag import Kkma
 from konlpy.tag import Twitter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
 import numpy as np
+import CustomizingArticle
 
 '''
 Step1. 문서 타입에 따른 문장 단위로 분리
@@ -16,30 +17,24 @@ class SentenceTokenizer(object):
         self.stopwords = ['중인' ,'만큼', '마찬가지', '꼬집었', "연합뉴스", "데일리", "동아일보", "중앙일보", "조선일보", "기자"
 ,"아", "휴", "아이구", "아이쿠", "아이고", "어", "나", "우리", "저희", "따라", "의해", "을", "를", "에", "의", "가",]
 
-
     # url 주소를 받아 기사내용 추출.
-    def url2sentences(self, url):
-        article = Article(url, language='ko') # newpaper
-        article.download()
+    def url2sentences(self, page_source):
+        article = CustomizingArticle.Article(language='ko') # newpaper
+        article.set_html(page_source)
         article.parse()
 
         # kkma를 이용해 문장단위로 분리하여 배열 리턴
         sentences = self.kkma.sentences(article.text)
 
-        for idx in range(0, len(sentences)):
-            if len(sentences[idx]) <= 10:
-                sentences[idx-1] += (' ' + sentences[idx])
-                sentences[idx] = ''
-
         return sentences
 
     # text 를 입력받아 문장단위로 분리하여 배열 리턴
-    def text2sentences(self, text):
-        sentences = self.kkma.sentences(text)
-        for idx in range(0, len(sentences)):
-            if len(sentences[idx]) <= 10:
-                sentences[idx-1] += (' ' + sentences[idx])
-                sentences[idx] = ''
+    def text2sentences(self, page_source):
+        article = CustomizingArticle.Article(language='ko') # newpaper
+        article.set_html(page_source)
+        article.parse()
+
+        sentences = self.kkma.sentences(article.text)
 
         return sentences
 
@@ -171,12 +166,3 @@ class TextRank(object):
             return keywords
         except:
             pass
-
-# 사용방법
-# url = 'https://namu.wiki/w/C(%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%20%EC%96%B8%EC%96%B4)'
-# textrank = TextRank(url)
-# for row in textrank.summarize(3):
-#     print(row)
-#     print()
-#
-# print('keywords :',textrank.keywords())

@@ -66,9 +66,6 @@ class Selenium:
         externalLinks = []
         pattern = re.compile("^(http|www)((?!" + excludeUrl + ").)*$")
 
-        pageSource = self.__driver.page_source
-        bsObj = BeautifulSoup(pageSource)
-
         # 현재 URL을 포함하지 않으면서 http나 www로 시작하는 링크를 모두 찾습니다.
         for link in bsObj.findAll('a', href=pattern):
             if link.attrs['href'] is not None:
@@ -81,9 +78,6 @@ class Selenium:
     def get_internal_links(self, bsObj, includeUrl, fullUrl, keyword):
         internalLinks = []
         pattern = re.compile("^(/|.*"+includeUrl+")")
-
-        pageSource = self.__driver.page_source
-        bsObj = BeautifulSoup(pageSource)
 
         # /로 시작하거나 includeUrl이 들어있는 링크를 모두 찾습니다.
         for link in bsObj.findAll('a', href=pattern):

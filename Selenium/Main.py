@@ -7,6 +7,7 @@ import sys
 import timeit
 import threading
 import logging
+from time import sleep
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -35,6 +36,21 @@ class Bot:
     def setNumThreads(self, numThreads):
         self.__numThreads = numThreads
         pass
+
+    def createWorkerBot(self):
+        self.__driverOfWorker = []
+
+        for i in range(0, self.__numThreads):
+            print ('workder bot create:', i)
+            self.__driverOfWorker.append(CrawlerBot.Selenium())
+
+    def removeWorkerBot(self):
+        try:
+            for i in range(0, self.__numThreads):
+                print ('workder bot remove:', i)
+                self.__driverOfWorker[i].quit()
+        except:
+            print('__numThreads not existed')
 
     def bot_start(self):
         # Google 에 해당 키워드 검색 후 화면 이동
@@ -77,9 +93,13 @@ class Bot:
         for link in googleLinks:
             try:
                 print('-----------------------------------------------------')
-                textrank = TextRank.TextRank(link)
+                print('link', link)
+                self.__bot.go_page(link)
+                pageSource = self.__bot.get_page_source()
 
-                for row in textrank.summarize(3):
+                textrank = TextRank.TextRank(pageSource)
+
+                for row in textrank.summarize(20):
                     print(row)
                     print()
 
@@ -113,6 +133,9 @@ class Bot:
 
         threads = []
 
+        # 쓰레드 개수만큼 봇 생성
+        self.createWorkerBot()
+
         for i in range(0, self.__numThreads):
             print('쓰레드 ', i, ' 가 탐색할 링크의 개수: ', workAmountList[i])
             start = i * workAmountList[i]
@@ -124,13 +147,24 @@ class Bot:
         for thread in threads:
             thread.join()
 
+        self.removeWorkerBot()
+
+        self.__bot.quit()
         pass
+
+        # 유튜브 링크 거르기
+        # mail:to 링크 거르기
 
     def travelLink(self, links, start, end, threadNum):
         print('Thread Num', threadNum, '실행')
         for i in range(start, end):
             try:
-                textrank = TextRank.TextRank(links[i])
+                print('-----------------------------------------------------')
+                print('link', links[i])
+                self.__driverOfWorker[threadNum].go_page(links[i])
+                pageSource = self.__driverOfWorker[threadNum].get_page_source()
+
+                textrank = TextRank.TextRank(pageSource)
 
                 for row in textrank.summarize(3):
                     print(row)
@@ -142,6 +176,7 @@ class Bot:
                 print('keywords :', keywordsSet)
                 if(self.getIntersection(keywordsSet)):
                     print('link', i, ': ', links[i], '완료')
+                print('-----------------------------------------------------')
             except:
                 # logger.info('travelLink error')
                 continue
@@ -163,7 +198,7 @@ Bot = Bot()
 Bot.setAddress(address)
 Bot.setKeyword('c언어')
 Bot.setIsDev(True)
-Bot.setNumThreads(1)
+Bot.setNumThreads(2)
 
 # Bot start
 start = timeit.default_timer()
