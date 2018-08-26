@@ -20,13 +20,9 @@ class SentenceTokenizer(object):
 
     # url 주소를 받아 기사내용 추출.
     def url2sentences(self, page_source):
-        print("asd")
         article = C_article.Article(language='ko') # newpaper
-        print("asd")
         article.set_html(page_source)
-        print("asd")
         article.parse()
-        print("asd")
 
         # kkma를 이용해 문장단위로 분리하여 배열 리턴
         sentences = self.kkma.sentences(article.text)
