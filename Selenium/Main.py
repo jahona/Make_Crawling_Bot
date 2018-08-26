@@ -3,12 +3,29 @@ import datetime
 import random
 import os
 
+from PyQt4.QtGui import *
+import MainWindow
+import sys
+import pickle
+
 random.seed(datetime.datetime.now())
 
-class Bot:
+class Bot(QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
         self.__depth = 0
+        #GUI 추가
+        QMainWindow.__init__(self)
+        self.setupUi(self)
+
+        # 검색 버튼 이벤트 핸들링
+        self.btnSearch.clicked.connect(self.search)
+        self.btnSearch.setAutoDefault(True)
+        # 저장 버튼 이벤트 핸들링
+        self.btnSave.clicked.connect(self.saveData)
+
+        # 메인윈도우 보이기
+        self.show()
         pass
 
     def setAddress(self, address):
@@ -19,15 +36,21 @@ class Bot:
         self.__keyword = keyword
         pass
 
-    def bot_start(self):
-        # Google 에 해당 키워드 검색 후 화면 이동
+    def setLink(self, links):
+        self.__link = []
+        for link in links:
+            self.__link.append(str(link))
+        pass
+
+    #GUI 검색
+    def search(self):
+        keyword = self.lineEdit.text()
+        Bot.setKeyword(keyword)
+
         self.__bot.search_keyword_based_on_google(self.__keyword)
 
         # Return Google Search List
         googleLinks = self.__bot.get_google_links()
-
-        now = datetime.datetime.now()
-        date = now.strftime('%Y%m%d_%H%M%S')
 
         externalLinks = []
         internalLinks = []
@@ -42,7 +65,7 @@ class Bot:
 
                 # 외부 링크를 배제를 위한 host 부분 추출
                 excludeUrl = self.__bot.split_address(link)
-
+                # 추출한 내부, 외부, 링크들 키워드들 통합
                 for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
                     if list not in externalLinks:
                         externalLinks.append(list)
@@ -55,29 +78,40 @@ class Bot:
             else:
                 continue
 
-        exfile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_외부링크.txt", 'w', encoding='UTF-8')
-        infile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_내부링크.txt", 'w', encoding='UTF-8')
-        keyfile = open(os.getcwd()+"/"+str(date)+"_"+keyword+"_태그별문장.txt", 'w', encoding='UTF-8')
+        Bot.setLink(externalLinks)
+        Bot.setLink(internalLinks)
 
-        for list in externalLinks:
-            exfile.write(str(list)+"\n")
-        for list in internalLinks:
-            infile.write(str(list)+"\n")
-        for list in keywordLinks:
-            keyfile.write(str(list)+"\n\n")
+        self.tableWidget.setRowCount(len(self.__link))
+        row = 0
+        for link in self.__link:
+            self.tableWidget.setItem(row, 0, QTableWidgetItem(keyword))
+            self.tableWidget.setItem(row, 1, QTableWidgetItem(link))
+            row += 1
 
-        exfile.close()
-        infile.close()
-        keyfile.close()
+        self.tableWidget.resizeColumnsToContents()
+        self.tableWidget.resizeRowsToContents()
+
+        file = open(os.getcwd()+"/_"+self.__keyword+"_문장.txt", 'w', encoding='UTF-8')
+        for link in keywordLinks:
+            file.write(link+"\n")
+        file.close()
+
+    def saveData(self):
+        now = datetime.datetime.now()
+        date = now.strftime('%Y%m%d_%H%M%S')
+        linkfile = open(os.getcwd()+"/"+str(date)+"_"+self.__keyword+"_링크.txt", 'w', encoding='UTF-8')
+        for link in self.__link:
+            linkfile.write(link+"\n")
+        linkfile.close()
+        QMessageBox.information(self, "저장", "데이타 저장됨")
 
 # variable
 address = "https://www.google.co.kr"
-keyword = input("검색어를 입력하세요: ")
 
 # Bot Setting
+app = QApplication(sys.argv)
 Bot = Bot()
 Bot.setAddress(address)
-Bot.setKeyword(keyword)
+Bot.search()
 
-# Bot start
-Bot.bot_start()
+app.exec_()
