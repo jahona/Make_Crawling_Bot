@@ -64,25 +64,28 @@ class Bot():
 
         # googleLinks에 있는 link들을 탐색
         for link in googleLinks:
-            try:
-                # 해당 페이지의 page source get
-                self.__bot.go_page(link)
+            if "search?" not in str(link):
+                try:
+                    # 해당 페이지의 page source get
+                    self.__bot.go_page(link)
 
-                pageSource = self.__bot.get_page_source()
-                bsObj = self.__bot.get_bs_obj(pageSource)
+                    pageSource = self.__bot.get_page_source()
+                    bsObj = self.__bot.get_bs_obj(pageSource)
 
-                # 외부 링크를 배제를 위한 host 부분 추출
-                excludeUrl = self.__bot.split_address(link)
+                    # 외부 링크를 배제를 위한 host 부분 추출
+                    excludeUrl = self.__bot.split_address(link)
 
-                for list in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
-                    if list not in externalLinks:
-                        externalLinks.append(list)
-                for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
-                    if list not in internalLinks:
-                        internalLinks.append(list)
-            except:
-                # logger.info('google link travel error')
-                pass
+                    for link in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
+                        if self.linkFilter(link) or link in externalLinks:
+                            continue
+                        externalLinks.append(link)
+                    for link in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
+                        if self.linkFilter(link) or link in internalLinks:
+                            continue
+                        internalLinks.append(link)
+                except:
+                    # logger.info('google link travel error')
+                    pass
 
         # 먼저, 구글 검색 리스트로부터 얻은 링크들을 TR 수행
         baseKeywordsList = []
@@ -179,20 +182,29 @@ class Bot():
                 keywordsSet = set(keywords)
 
                 print('keywords :', keywordsSet)
-                if(self.getIntersection(keywordsSet)):
-                    print('link', i, ': ', links[i], '완료')
                 print('-----------------------------------------------------')
             except:
                 # logger.info('travelLink error')
                 continue
         pass
 
-    def getIntersection(keywords):
+    def getIntersection(self, keywords):
         intersection = baseKeywordsSet & set(keywords)
         if(len(intersection) >= 2):
             return True
         else:
             return False
+
+    def linkFilter(self, link):
+        link = str(link)
+        if "search" in link:
+            return True
+
+        if "facebook" in link:
+            return True
+
+        if "wikipedia.org" in link and "ko.wikipedia.org" not in link:
+            return True
 
 # variable
 address = "https://www.google.co.kr"
