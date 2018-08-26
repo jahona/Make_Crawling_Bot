@@ -54,7 +54,6 @@ class Bot():
 
     def bot_start(self):
         # Google 에 해당 키워드 검색 후 화면 이동
-
         self.__bot.search_keyword_based_on_google(self.__keyword)
 
         # Return Google Search List
@@ -136,8 +135,16 @@ class Bot():
 
         for i in range(0, self.__numThreads):
             print('쓰레드 ', i, ' 가 탐색할 링크의 개수: ', workAmountList[i])
-            start = i * workAmountList[i]
-            end = (i + 1) * workAmountList[i]
+
+            start = i * workAmountList[0]
+
+            if(i == self.__numThreads-1):
+                end = countOfLink
+            else:
+                end = (i + 1) * workAmountList[0]
+
+            print(start, end)
+
             thread = threading.Thread(target=self.travelLink, args=(allLinks, start, end, i))
             thread.start()
             threads.append(thread)
