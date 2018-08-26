@@ -19,7 +19,7 @@ class Selenium:
         # selenium_path = data.split('\n')[0].split('=')[1]
         selenium_path = os.getcwd()+"/chromedriver"
         self.__driver = webdriver.Chrome(selenium_path, chrome_options=options)
-        self.__driver.set_page_load_timeout(10)
+        self.__driver.set_page_load_timeout(20)
         pass
 
     def split_address(self, fullAddress):
@@ -45,12 +45,8 @@ class Selenium:
         return googleLinks
 
     def go_page(self, url):
-        try:
-            self.__driver.get(url)
-            # self.__driver.refresh()
-        except TimeoutException:
-            return 0
-        return 1
+        self.__driver.get(url)
+        pass
 
     def get_current_url(self):
         return self.__driver.current_url
@@ -70,9 +66,6 @@ class Selenium:
         externalLinks = []
         pattern = re.compile("^(http|www)((?!" + excludeUrl + ").)*$")
 
-        pageSource = self.__driver.page_source
-        bsObj = BeautifulSoup(pageSource)
-
         # 현재 URL을 포함하지 않으면서 http나 www로 시작하는 링크를 모두 찾습니다.
         for link in bsObj.findAll('a', href=pattern):
             if link.attrs['href'] is not None:
@@ -85,9 +78,6 @@ class Selenium:
     def get_internal_links(self, bsObj, includeUrl, fullUrl, keyword):
         internalLinks = []
         pattern = re.compile("^(/|.*"+includeUrl+")")
-
-        pageSource = self.__driver.page_source
-        bsObj = BeautifulSoup(pageSource)
 
         # /로 시작하거나 includeUrl이 들어있는 링크를 모두 찾습니다.
         for link in bsObj.findAll('a', href=pattern):

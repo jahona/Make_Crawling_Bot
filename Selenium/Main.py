@@ -2,31 +2,24 @@ import CrawlerBot
 import datetime
 import random
 import os
-
-from PyQt4.QtGui import *
-import MainWindow
+import TextRank
 import sys
-import pickle
+import timeit
+import threading
+import logging
+from time import sleep
 
+# logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger()
 random.seed(datetime.datetime.now())
 
 class Bot(QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
-        self.__depth = 0
-        #GUI 추가
-        QMainWindow.__init__(self)
-        self.setupUi(self)
-
-        # 검색 버튼 이벤트 핸들링
-        self.btnSearch.clicked.connect(self.search)
-        self.btnSearch.setAutoDefault(True)
-        # 저장 버튼 이벤트 핸들링
-        self.btnSave.clicked.connect(self.saveData)
-
-        # 메인윈도우 보이기
-        self.show()
         pass
+
+    def setIsDev(self, dev):
+        self.__dev = dev
 
     def setAddress(self, address):
         self.__address = address
@@ -36,16 +29,31 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__keyword = keyword
         pass
 
-    def setLink(self, links):
-        self.__link = []
-        for link in links:
-            self.__link.append(str(link))
+    def setBaseKeywordsSet(self, baseKeywordsSet):
+        self.__baseKeywordsSet = baseKeywordsSet
         pass
 
-    #GUI 검색
-    def search(self):
-        keyword = self.lineEdit.text()
-        Bot.setKeyword(keyword)
+    def setNumThreads(self, numThreads):
+        self.__numThreads = numThreads
+        pass
+
+    def createWorkerBot(self):
+        self.__driverOfWorker = []
+
+        for i in range(0, self.__numThreads):
+            print ('workder bot create:', i)
+            self.__driverOfWorker.append(CrawlerBot.Selenium())
+
+    def removeWorkerBot(self):
+        try:
+            for i in range(0, self.__numThreads):
+                print ('workder bot remove:', i)
+                self.__driverOfWorker[i].quit()
+        except:
+            print('__numThreads not existed')
+
+    def bot_start(self):
+        # Google 에 해당 키워드 검색 후 화면 이동
 
         self.__bot.search_keyword_based_on_google(self.__keyword)
 
@@ -54,64 +62,146 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         externalLinks = []
         internalLinks = []
-        keywordLinks = []
 
         # googleLinks에 있는 link들을 탐색
         for link in googleLinks:
-            # 해당 페이지의 page source get
-            if(self.__bot.go_page(link)):
+            try:
+                # 해당 페이지의 page source get
+                self.__bot.go_page(link)
+
                 pageSource = self.__bot.get_page_source()
                 bsObj = self.__bot.get_bs_obj(pageSource)
 
                 # 외부 링크를 배제를 위한 host 부분 추출
                 excludeUrl = self.__bot.split_address(link)
-                # 추출한 내부, 외부, 링크들 키워드들 통합
-                for list in self.__bot.get_external_links(bsObj, excludeUrl, keyword):
+
+                for list in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
                     if list not in externalLinks:
                         externalLinks.append(list)
-                for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, keyword):
+                for list in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
                     if list not in internalLinks:
                         internalLinks.append(list)
-                for list in self.__bot.get_keyword_text_in_tag(bsObj, link, keyword):
-                    if list not in keywordLinks:
-                        keywordLinks.append(list)
-            else:
+            except:
+                # logger.info('google link travel error')
+                pass
+
+        # 먼저, 구글 검색 리스트로부터 얻은 링크들을 TR 수행
+        baseKeywordsList = []
+
+        for link in googleLinks:
+            try:
+                print('-----------------------------------------------------')
+                print('link', link)
+                self.__bot.go_page(link)
+                pageSource = self.__bot.get_page_source()
+
+                textrank = TextRank.TextRank(pageSource)
+
+                for row in textrank.summarize(20):
+                    print(row)
+                    print()
+
+                keywords = textrank.keywords()
+
+                for keyword in keywords:
+                    baseKeywordsList.append(keyword)
+
+                print('-----------------------------------------------------')
+            except:
+                # logger.info('google link TR error')
                 continue
 
-        Bot.setLink(externalLinks)
-        Bot.setLink(internalLinks)
+        # 중복 제거를 위해 set 으로 변경
+        baseKeywordsSet = set(baseKeywordsList)
+        self.setBaseKeywordsSet(baseKeywordsSet)
 
-        self.tableWidget.setRowCount(len(self.__link))
-        row = 0
-        for link in self.__link:
-            self.tableWidget.setItem(row, 0, QTableWidgetItem(keyword))
-            self.tableWidget.setItem(row, 1, QTableWidgetItem(link))
-            row += 1
+        # 외부, 내부 링크들에 대해 TR 수행
+        allLinks = externalLinks + internalLinks
+        countOfLink = len(allLinks)
+        workAMountOfEachLink = int(float(countOfLink / self.__numThreads));
 
-        self.tableWidget.resizeColumnsToContents()
-        self.tableWidget.resizeRowsToContents()
+        workAmountList = []
+        for i in range(0, self.__numThreads):
+            workAmountList.append(workAMountOfEachLink);
 
-        file = open(os.getcwd()+"/_"+self.__keyword+"_문장.txt", 'w', encoding='UTF-8')
-        for link in keywordLinks:
-            file.write(link+"\n")
-        file.close()
+        workAmountList[self.__numThreads-1] += countOfLink % self.__numThreads
 
-    def saveData(self):
-        now = datetime.datetime.now()
-        date = now.strftime('%Y%m%d_%H%M%S')
-        linkfile = open(os.getcwd()+"/"+str(date)+"_"+self.__keyword+"_링크.txt", 'w', encoding='UTF-8')
-        for link in self.__link:
-            linkfile.write(link+"\n")
-        linkfile.close()
-        QMessageBox.information(self, "저장", "데이타 저장됨")
+        print('탐색할 링크의 개수', countOfLink)
+        print('쓰레드 개수', self.__numThreads)
+
+        threads = []
+
+        # 쓰레드 개수만큼 봇 생성
+        self.createWorkerBot()
+
+        for i in range(0, self.__numThreads):
+            print('쓰레드 ', i, ' 가 탐색할 링크의 개수: ', workAmountList[i])
+            start = i * workAmountList[i]
+            end = (i + 1) * workAmountList[i]
+            thread = threading.Thread(target=self.travelLink, args=(allLinks, start, end, i))
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+        self.removeWorkerBot()
+
+        self.__bot.quit()
+        pass
+
+        # 유튜브 링크 거르기
+        # mail:to 링크 거르기
+
+    def travelLink(self, links, start, end, threadNum):
+        print('Thread Num', threadNum, '실행')
+        for i in range(start, end):
+            try:
+                print('-----------------------------------------------------')
+                print('link', links[i])
+                self.__driverOfWorker[threadNum].go_page(links[i])
+                pageSource = self.__driverOfWorker[threadNum].get_page_source()
+
+                textrank = TextRank.TextRank(pageSource)
+
+                for row in textrank.summarize(3):
+                    print(row)
+                    print()
+
+                keywords = textrank.keywords()
+                keywordsSet = set(keywords)
+
+                print('keywords :', keywordsSet)
+                if(self.getIntersection(keywordsSet)):
+                    print('link', i, ': ', links[i], '완료')
+                print('-----------------------------------------------------')
+            except:
+                # logger.info('travelLink error')
+                continue
+        pass
+
+    def getIntersection(keywords):
+        intersection = baseKeywordsSet & set(keywords)
+        if(len(intersection) >= 2):
+            return True
+        else:
+            return False
 
 # variable
 address = "https://www.google.co.kr"
+# keyword = input("검색어를 입력하세요: ")
 
 # Bot Setting
 app = QApplication(sys.argv)
 Bot = Bot()
 Bot.setAddress(address)
-Bot.search()
 
-app.exec_()
+Bot.setKeyword('c언어')
+Bot.setIsDev(True)
+Bot.setNumThreads(2)
+
+# Bot start
+start = timeit.default_timer()
+Bot.bot_start()
+stop = timeit.default_timer()
+print(stop - start)
