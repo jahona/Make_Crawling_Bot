@@ -13,7 +13,7 @@ from time import sleep
 logger = logging.getLogger()
 random.seed(datetime.datetime.now())
 
-class Bot:
+class Bot(QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
         pass
@@ -54,13 +54,11 @@ class Bot:
 
     def bot_start(self):
         # Google 에 해당 키워드 검색 후 화면 이동
+
         self.__bot.search_keyword_based_on_google(self.__keyword)
 
         # Return Google Search List
         googleLinks = self.__bot.get_google_links()
-
-        now = datetime.datetime.now()
-        date = now.strftime('%Y%m%d_%H%M%S')
 
         externalLinks = []
         internalLinks = []
@@ -194,8 +192,10 @@ address = "https://www.google.co.kr"
 # keyword = input("검색어를 입력하세요: ")
 
 # Bot Setting
+app = QApplication(sys.argv)
 Bot = Bot()
 Bot.setAddress(address)
+
 Bot.setKeyword('c언어')
 Bot.setIsDev(True)
 Bot.setNumThreads(2)

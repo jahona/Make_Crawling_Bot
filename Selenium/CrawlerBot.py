@@ -15,9 +15,9 @@ class Selenium:
         # options.add_argument('--disable-gpu')
         # options.add_argument('--no-sandbox')
 
-        data=open(os.getcwd() + "/.env").read()
-        selenium_path = data.split('\n')[0].split('=')[1]
-        # selenium_path = os.getcwd()+"/chromedriver"
+        # data=open(os.getcwd() + "/.env").read()
+        # selenium_path = data.split('\n')[0].split('=')[1]
+        selenium_path = os.getcwd()+"/chromedriver"
         self.__driver = webdriver.Chrome(selenium_path, chrome_options=options)
         self.__driver.set_page_load_timeout(20)
         pass
