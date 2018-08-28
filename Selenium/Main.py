@@ -80,11 +80,7 @@ class Bot():
         internalLinks = []
 
         # googleLinks에 있는 link들을 탐색
-        count = 0
         for link in googleLinks:
-            if count == 1:
-                break
-            count = count + 1
             if "search?" not in str(link):
                 try:
                     # 해당 페이지의 page source get
@@ -112,11 +108,7 @@ class Bot():
         baseKeywordsList = []
         filelink = []
         filesentence = []
-        count = 0
         for link in googleLinks:
-            if count == 1:
-                break
-            count = count + 1
             try:
                 print('-----------------------------------------------------')
                 print('link', link)
@@ -216,7 +208,7 @@ class Bot():
         filesimilarity = []
 
         print('Thread Num', threadNum, '실행')
-        for i in range(start, start+5):
+        for i in range(start, end):
             try:
                 print('-----------------------------------------------------')
                 print('link', i, links[i])
