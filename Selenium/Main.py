@@ -8,6 +8,8 @@ import timeit
 import threading
 import logging
 from time import sleep
+import Document_similarity
+import time
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -16,6 +18,7 @@ random.seed(datetime.datetime.now())
 class Bot():
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
+        self.__DS = Document_similarity.Document_similarity()
         pass
 
     def setIsDev(self, dev):
@@ -52,6 +55,20 @@ class Bot():
         except:
             print('__numThreads not existed')
 
+    def save_File(self, title, lists):
+        now = datetime.datetime.now()
+        date = now.strftime('%Y%m%d')
+        #file open
+        file = open(os.getcwd()+"/"+str(date)+"_"+self.__keyword+"_"+title+".txt", "a", encoding='UTF-8')
+        file.write("------------------------------------------------------------------------------------------------------------------------\n")
+        for list in lists:
+            try:
+                file.write(list)
+                file.write("------------------------------------------------------------------------------------------------------------------------\n")
+            except:
+                pass
+        file.close()
+
     def bot_start(self):
         # Google 에 해당 키워드 검색 후 화면 이동
         self.__bot.search_keyword_based_on_google(self.__keyword)
@@ -63,7 +80,11 @@ class Bot():
         internalLinks = []
 
         # googleLinks에 있는 link들을 탐색
+        count = 0
         for link in googleLinks:
+            if count == 1:
+                break
+            count = count + 1
             if "search?" not in str(link):
                 try:
                     # 해당 페이지의 page source get
@@ -89,30 +110,54 @@ class Bot():
 
         # 먼저, 구글 검색 리스트로부터 얻은 링크들을 TR 수행
         baseKeywordsList = []
-
+        filelink = []
+        filesentence = []
+        count = 0
         for link in googleLinks:
+            if count == 1:
+                break
+            count = count + 1
             try:
                 print('-----------------------------------------------------')
                 print('link', link)
                 self.__bot.go_page(link)
                 pageSource = self.__bot.get_page_source()
 
+                document = TextRank.SentenceTokenizer()
+                #
+                self.__DS.set_basepagesouce(str(document.url2sentences(pageSource)))
+
+                filelink.append("\n"+link+"\n\n")
+                filesentence.append("\n"+link+"\n\n")
+
+                for sentence in document.url2sentences(pageSource):
+                    filesentence.append(sentence+"\n")
+
                 textrank = TextRank.TextRank(pageSource)
 
                 for row in textrank.summarize(20):
+                    filelink.append(row+"\n")
                     print(row)
                     print()
 
+                filelink.append("\n")
+
                 keywords = textrank.keywords()
+                filelink.append(str(keywords)+"\n")
 
                 for keyword in keywords:
                     baseKeywordsList.append(keyword)
+                print(baseKeywordsList)
+
+                filelink.append("\n\n")
 
                 print('-----------------------------------------------------')
             except:
                 # logger.info('google link TR error')
                 continue
 
+        self.save_File("구글링크_요약문", filelink)
+        self.save_File("구글링크_문장", filesentence)
         # 중복 제거를 위해 set 으로 변경
         baseKeywordsSet = set(baseKeywordsList)
         self.setBaseKeywordsSet(baseKeywordsSet)
@@ -164,28 +209,77 @@ class Bot():
         # mail:to 링크 거르기
 
     def travelLink(self, links, start, end, threadNum):
+        filelink = []
+        filesentence = []
+        filesuccesslink = []
+        filefaillink = []
+        filesimilarity = []
+
         print('Thread Num', threadNum, '실행')
-        for i in range(start, end):
+        for i in range(start, start+5):
             try:
                 print('-----------------------------------------------------')
-                print('link', links[i])
+                print('link', i, links[i])
                 self.__driverOfWorker[threadNum].go_page(links[i])
                 pageSource = self.__driverOfWorker[threadNum].get_page_source()
+
+                document = TextRank.SentenceTokenizer()
+                sentences = []
+
+                for sentence in document.url2sentences(pageSource):
+                    sentences.append(sentence)
+
+                self.__DS.set_pagesource(str(sentences))
+                self.__DS.vectorizing()
+
+                # 벡터 사이의 거리를 구하기 위해서는 1차원 배열을 이용해야 하기 때문에 [0], 인덱스를 지정합니다.
+                post_vec = self.__DS.get_post_vec().toarray()[0]
+                new_post_vec = self.__DS.get_new_post_vec().toarray()[0]
+                d = self.__DS.dist_norm(post_vec, new_post_vec)
+                print("=== link %i with dist = %.2f" %(i, d))
+                if d<self.__DS.get_best_dist():
+                    self.__DS.set_best_dist(d)
+                    self.__DS.set_best_i(i)
+                self.__DS.set_dic(i, d)
+
+                filelink.append("\n"+links[i]+"\n\n")
+                filesentence.append("\n"+links[i]+"\n\n")
+
+                for sentence in document.url2sentences(pageSource):
+                    filesentence.append(sentence+"\n")
 
                 textrank = TextRank.TextRank(pageSource)
 
                 for row in textrank.summarize(3):
+                    filelink.append(row+"\n")
                     print(row)
                     print()
+
+                filelink.append("\n")
 
                 keywords = textrank.keywords()
                 keywordsSet = set(keywords)
 
+                filelink.append(str(keywordsSet)+"\n")
+
                 print('keywords :', keywordsSet)
                 print('-----------------------------------------------------')
+
+                filesuccesslink.append(links[i]+"\n")
             except:
                 # logger.info('travelLink error')
+                filefaillink.append(links[i]+"\n")
                 continue
+        if threadNum == 0:
+            dic= self.__DS.get_dic()
+            for i,d in sorted(dic.items(), key=lambda dic:dic[1]):
+                filesimilarity.append(str(i)+" : "+str(d)+"  "+links[i]+"\n")
+
+        self.save_File("추출링크_요약문", filelink)
+        self.save_File("추출링크_문장", filesentence)
+        self.save_File("추출성공_링크", filesuccesslink)
+        self.save_File("추출실패_링크", filefaillink)
+        self.save_File("구글링크와의_연관도", filesimilarity)
         pass
 
     def getIntersection(self, keywords):

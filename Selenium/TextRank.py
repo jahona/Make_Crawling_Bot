@@ -1,6 +1,6 @@
 # from newspaper import Article
 from konlpy.tag import Kkma
-from konlpy.tag import Twitter
+from konlpy.tag import Okt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
@@ -13,7 +13,7 @@ Step1. 문서 타입에 따른 문장 단위로 분리
 class SentenceTokenizer(object):
     def __init__(self):
         self.kkma = Kkma()
-        self.twitter = Twitter()
+        self.Okt = Okt()
         self.stopwords = ['중인' ,'만큼', '마찬가지', '꼬집었', "연합뉴스", "데일리", "동아일보", "중앙일보", "조선일보", "기자"
 ,"아", "휴", "아이구", "아이쿠", "아이고", "어", "나", "우리", "저희", "따라", "의해", "을", "를", "에", "의", "가",]
 
@@ -38,12 +38,12 @@ class SentenceTokenizer(object):
 
         return sentences
 
-    # sentences 로부터 Twitter.nouns()를 이용하여 명사 추출 후 배열 리턴
+    # sentences 로부터 Okt.nouns()를 이용하여 명사 추출 후 배열 리턴
     def get_nouns(self, sentences):
         nouns = []
         for sentence in sentences:
             if sentence is not '':
-                nouns.append(' '.join([noun for noun in self.twitter.nouns(str(sentence))
+                nouns.append(' '.join([noun for noun in self.Okt.nouns(str(sentence))
                 if noun not in self.stopwords and len(noun) > 1]))
 
         return nouns
