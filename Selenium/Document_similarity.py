@@ -18,64 +18,73 @@ class Document_similarity():
         self.best_dist = sys.maxsize
         self.best_doc = None
         self.best_i = None
-        self.pageSource = []
-        self.basepageSource = []
         self.vectorizer = CountVectorizer(min_df=1, stop_words="english")
+        self.dic = dict()
+
+        self.baseSentences = []
+        self.targetSentences = []
         self.post_vec = None
         self.new_post_vec = None
-        self.dic = dict()
+
+        self.base_normalized = None
 
     def get_best_dist(self):
         return self.best_dist
+
     def get_best_doc(self):
         return self.best_doc
+
     def get_best_i(self):
         return self.best_i
-    def get_pageSource(self):
-        return self.pageSource
-    def get_basepageSource(self):
+
+    def get_target_sentences(self):
+        return self.targetSentences
+
+    def get_base_sentences(self):
         return self.basepageSource
+
     def get_vectorizer(self):
         return self.vectorizer
+
     def set_best_dist(self, best_dis):
         self.best_dist = best_dis
+
     def set_best_i(self, best_i):
         self.best_i = best_i
+
     def get_post_vec(self):
         return self.post_vec
+
     def get_new_post_vec(self):
         return self.new_post_vec
+
     def get_dic(self):
         return self.dic
+
     def set_dic(self, i, dist):
         self.dic[i] = dist
 
     def dist_norm(self, v1, v2):
-        v1_normalized = v1/np.linalg.norm(v1)
-        v2_normalized = v2/np.linalg.norm(v2)
+        if self.base_normalized is None:
+            self.base_normalized = v1 / np.linalg.norm(v1)
 
-        delta = v1_normalized - v2_normalized
+        target_normalized = v2 / np.linalg.norm(v2)
+
+        delta = self.base_normalized - target_normalized
         # norm(): 벡터 간에 유클리드 거리를 계산
         return np.linalg.norm(delta)
 
-    def set_basepagesouce(self, pageSource):
-        # self.basepageSource = ["This is a toy post about machine learning. Actually, it contains not much interesting stuff.",
-        # "Imaging databases provide storage capabilities.",
-        # "Most imaging databases save images permanently.",
-        # "Imaging databases store data.",
-        # "Imaging databases store data. Imaging databases store data. Imaging databases store data."]
-        self.basepageSource.append(pageSource)
+    def add_sentences_to_base(self, sentences):
+        self.baseSentences += sentences
 
-    def set_pagesource(self, pageSource):
-        # self.pageSource = "imaging databases"
-        self.pageSource = []
-        self.pageSource.append(pageSource)
+    def set_target_sentence(self, sentences):
+        self.targetSentences = sentences
 
-    def vectorizing(self):
-        # Count Vector를 만들었습니다. stop_words 인자는 불용어를 의미합니다.
-        # vectorizer = StemmedCountVector(min_df=1, stop_words="english", decode_error='ignore')
-        self.post_vec = self.vectorizer.fit_transform(self.basepageSource)
-        self.new_post_vec = self.vectorizer.transform(self.pageSource)
+    def base_vectorizing(self):
+        self.post_vec = self.vectorizer.fit_transform(self.baseSentences)
+
+    def target_vectorizing(self):
+        self.new_post_vec = self.vectorizer.transform(self.targetSentences)
 
 
 # D_S = Document_similarity()
