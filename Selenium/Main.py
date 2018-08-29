@@ -170,14 +170,14 @@ class Bot():
                     distance = self.__validation.dist_norm()
 
                     if math.isnan(distance) == True:
-                        raise NaNError
+                        raise ValueError
 
                     if distance < self.__validation.get_best_dist():
                         self.__validation.set_best_dist(d)
                         self.__validation.set_best_i(i)
 
                     self.__validation.set_dic(index, distance)
-                except NaNError:
+                except ValueError:
                     print('distance 이 nan입니다')
                     continue
                 except:
