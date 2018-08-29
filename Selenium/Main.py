@@ -8,7 +8,7 @@ import timeit
 import threading
 import logging
 from time import sleep
-import Document_similarity
+import Validation
 import time
 import math
 
@@ -19,7 +19,7 @@ random.seed(datetime.datetime.now())
 class Bot():
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
-        self.__DS = Document_similarity.Document_similarity()
+        self.__validation = Validation.Validation()
         pass
 
     def setIsDev(self, dev):
@@ -37,28 +37,10 @@ class Bot():
         self.__baseKeywordsSet = baseKeywordsSet
         pass
 
-    def setNumThreads(self, numThreads):
-        self.__numThreads = numThreads
-        pass
-
-    def createWorkerBot(self):
-        self.__driverOfWorker = []
-
-        for i in range(0, self.__numThreads):
-            print ('workder bot create:', i)
-            self.__driverOfWorker.append(CrawlerBot.Selenium())
-
-    def removeWorkerBot(self):
-        try:
-            for i in range(0, self.__numThreads):
-                print ('workder bot remove:', i)
-                self.__driverOfWorker[i].quit()
-        except:
-            print('__numThreads not existed')
-
     def save_File(self, title, lists):
         now = datetime.datetime.now()
         date = now.strftime('%Y%m%d')
+
         #file open
         file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_" + title + ".txt", "a", encoding='UTF-8')
         file.write("------------------------------------------------------------------------------------------------------------------------\n")
@@ -93,205 +75,132 @@ class Bot():
                     # 외부 링크를 배제를 위한 host 부분 추출
                     excludeUrl = self.__bot.split_address(link)
 
+                    # 외부 링크 흭득
                     for link in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
                         if self.linkFilter(link) or link in externalLinks:
                             continue
                         externalLinks.append(link)
+
+                    # 내부 링크 흭득
                     for link in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
                         if self.linkFilter(link) or link in internalLinks:
                             continue
                         internalLinks.append(link)
                 except:
-                    # logger.info('google link travel error')
                     pass
 
-        # 먼저, 구글 검색 리스트로부터 얻은 링크들을 TR 수행
-        baseKeywordsList = []
+        ## 파일에 저장할 data 배열
+        datas = []
 
-        filelink = []
-        filesentence = []
+        ## 구글 검색 리스트 첫 화면에서 요약문과 키워드, 그리고 문서 유사도를 위해 기준이 될 문장들을 추출
         for link in googleLinks:
             try:
-                print('-----------------------------------------------------')
                 print('link', link)
-                self.__bot.go_page(link)
-                pageSource = self.__bot.get_page_source()
 
-                # TextRank의 url2sentences을 사용하기 위함. 전체 문장 가져오기
-                # set_basepagesouce()를 이용해 각 문서의 모든 문장들을 하나의 배열에 append
+                try:
+                    self.__bot.go_page(link)
+                    pageSource = self.__bot.get_page_source()
+                except:
+                    print('셀러니움 에러')
+                    continue
 
-                filelink.append("\n" + link + "\n\n")
-                filesentence.append("\n" + link + "\n\n")
+                try:
+                    # 요약문 구하기
+                    textrank = TextRank.TextRank(pageSource)
+                    summarizes = textrank.summarize(10)
+                    keywords = textrank.keywords()
+                except:
+                    print('TextRank 에러')
+                    continue
 
-                document = TextRank.SentenceTokenizer()
-                sentences = document.url2sentences(pageSource)
+                try:
+                    self.__validation.base_vectorizing(summarizes)
+                except:
+                    print('vectorizer 에러')
+                    continue
 
-                for sentence in sentences:
-                    filesentence.append(sentence + "\n")
-
-                textrank = TextRank.TextRank(pageSource)
-
-                rows = []
-                for index, row in enumerate(textrank.summarize(20)):
-                    if index < 4:
-                        filelink.append(row + "\n")
-                        print(row)
-                        print()
-                    rows.append(row)
-
-                self.__DS.add_sentences_to_base(rows)
-
-                filelink.append("\n")
-
-                keywords = textrank.keywords()
-                filelink.append(str(keywords)+"\n")
-
-                for keyword in keywords:
-                    baseKeywordsList.append(keyword)
-                print(baseKeywordsList)
-
-                filelink.append("\n\n")
-
-                print('-----------------------------------------------------')
-            except:
-                print('error')
-                # logger.info('google link TR error')
+                try:
+                    self.printCommand(link, summarizes, keywords)
+                except:
+                    print('파일 입력 에러')
+                    continue
+            except Exception as ex:
+                print('에러가 발생했습니다', ex)
                 continue
-
-        self.save_File("구글링크_요약문", filelink)
-        self.save_File("구글링크_문장", filesentence)
-
-        self.__DS.base_vectorizing()
-
-        # 중복 제거를 위해 set 으로 변경
-        baseKeywordsSet = set(baseKeywordsList)
-        self.setBaseKeywordsSet(baseKeywordsSet)
 
         # 외부, 내부 링크들에 대해 TR 수행
         allLinks = externalLinks + internalLinks
-        countOfLink = len(allLinks)
 
         self.travelLink(allLinks)
-
-        # workAMountOfEachLink = int(float(countOfLink / self.__numThreads));
-        #
-        # workAmountList = []
-        # for i in range(0, self.__numThreads):
-        #     workAmountList.append(workAMountOfEachLink);
-        #
-        # workAmountList[self.__numThreads-1] += countOfLink % self.__numThreads
-        #
-        # print('탐색할 링크의 개수', countOfLink)
-        # print('쓰레드 개수', self.__numThreads)
-        #
-        # threads = []
-
-        # # 쓰레드 개수만큼 봇 생성
-        # self.createWorkerBot()
-        #
-        # for i in range(0, self.__numThreads):
-        #     print('쓰레드 ', i, ' 가 탐색할 링크의 개수: ', workAmountList[i])
-        #
-        #     start = i * workAmountList[0]
-        #
-        #     if(i == self.__numThreads-1):
-        #         end = countOfLink
-        #     else:
-        #         end = (i + 1) * workAmountList[0]
-        #
-        #     print(start, end)
-        #
-        #     thread = threading.Thread(target=self.travelLink, args=(allLinks, start, end, i))
-        #     thread.start()
-        #     threads.append(thread)
-        #
-        # for thread in threads:
-        #     thread.join()
-        #
-        # self.removeWorkerBot()
 
         self.__bot.quit()
         pass
 
     def travelLink(self, links):
-        filelink = []
-        filesentence = []
-        filesuccesslink = []
-        filefaillink = []
-        filesimilarity = []
-
-        for (i, link) in enumerate(links):
+        for (index, link) in enumerate(links):
             try:
-                print('-----------------------------------------------------')
-                print('link', i, link)
+                print('link', link)
+
                 # 페이지 이동
-                self.__bot.go_page(link)
-                pageSource = self.__bot.get_page_source()
-
-                # 문장 추출
-                document = TextRank.SentenceTokenizer()
-                sentences = document.url2sentences(pageSource)
-
-                textrank = TextRank.TextRank(pageSource)
-
-                rows = []
-                for index, row in enumerate(textrank.summarize(20)):
-                    if index < 4:
-                        filelink.append(row + "\n")
-                        print(row)
-                        print()
-                    rows.append(row)
-
-                self.__DS.set_target_sentence(rows)
-                self.__DS.target_vectorizing()
-
-                # 벡터 사이의 거리를 구하기 위해서는 1차원 배열을 이용해야 하기 때문에 [0], 인덱스를 지정합니다.
-                post_vec = self.__DS.get_post_vec().toarray()[0]
-                new_post_vec = self.__DS.get_new_post_vec().toarray()[0]
-
-                d = self.__DS.dist_norm(post_vec, new_post_vec)
-
-                if math.isnan(d):
+                try:
+                    self.__bot.go_page(link)
+                    pageSource = self.__bot.get_page_source()
+                except:
+                    print('셀러니움 에러')
                     continue
 
-                for sentence in sentences:
-                    filesentence.append(sentence + "\n")
-                filelink.append("\n" + link + "\n\n")
-                filesentence.append("\n" + link + "\n\n")
+                try:
+                    # 요약문 구하기
+                    textrank = TextRank.TextRank(pageSource)
+                    summarizes = textrank.summarize(10)
+                    keywords = textrank.keywords()
+                except:
+                    print('TextRank 에러')
+                    continue
 
-                print("=== link %i with dist = %.2f" % (i, d))
+                try:
+                    self.__validation.target_vectorizing(summarizes)
+                except:
+                    print('vectorizer 에러')
+                    continue
 
-                if d < self.__DS.get_best_dist():
-                    self.__DS.set_best_dist(d)
-                    self.__DS.set_best_i(i)
+                # 유클리드 거리 구하기
+                try:
+                    # base와 target간에 유클리드 거리 구하기
+                    distance = self.__validation.dist_norm()
 
-                self.__DS.set_dic(i, d)
+                    if math.isnan(distance) == True:
+                        raise NaNError
 
-                filelink.append("\n")
+                    if distance < self.__validation.get_best_dist():
+                        self.__validation.set_best_dist(d)
+                        self.__validation.set_best_i(i)
 
-                keywords = textrank.keywords()
-                keywordsSet = set(keywords)
+                    self.__validation.set_dic(index, distance)
+                except NaNError:
+                    print('distance 이 nan입니다')
+                    continue
+                except:
+                    print('유클리드 거리 구하기 에러')
+                    continue
 
-                filelink.append(str(keywordsSet)+"\n")
+                # 파일 입력
+                try:
+                    self.printCommand(link, summarizes, keywords, distance)
+                except:
+                    print('파일 입력 에러')
+                    continue
 
-                print('keywords :', keywordsSet)
-                print('-----------------------------------------------------')
-
-                filesuccesslink.append(links[i]+"\n")
-            except:
-                print('error')
-                filefaillink.append(links[i]+"\n")
+            except Exception as ex:
+                print('에러가 발생했습니다', ex)
                 continue
 
-        dic= self.__DS.get_dic()
-        for i,d in sorted(dic.items(), key=lambda dic:dic[1]):
-            filesimilarity.append(str(i) + " : " + str(d)+ "  " + links[i] + "\n")
+        dic = self.__validation.get_dic()
 
-        self.save_File("추출링크_요약문", filelink)
-        self.save_File("추출링크_문장", filesentence)
-        self.save_File("추출성공_링크", filesuccesslink)
-        self.save_File("추출실패_링크", filefaillink)
-        self.save_File("구글링크와의_연관도", filesimilarity)
+        for index, distance in sorted(dic.items(), key=lambda dic:dic[1]):
+            # TODO: 최종적으로 파일 저장
+            pass
+
         pass
 
     def getIntersection(self, keywords):
@@ -302,18 +211,31 @@ class Bot():
             return False
 
     def linkFilter(self, link):
-        #TODO: 유튜브 링크 거르기
-        #TODO: mail:to 링크 거르기
+        blackList = ["search", "facebook", "wikipedia.org", "youtube", "mail:to"]
+        whiteList = ["ko.wikipedia.org"]
 
         link = str(link)
-        if "search" in link:
+
+        if link in blackList and link not in whiteList:
             return True
 
-        if "facebook" in link:
-            return True
+        return False
 
-        if "wikipedia.org" in link and "ko.wikipedia.org" not in link:
-            return True
+    def printCommand(self, link, summarizes, keywords, distance=None):
+        print('----------------------------------')
+
+        print('link: ', link)
+
+        for summarize in summarizes:
+            print(summarize)
+
+        print(set(keywords))
+
+        if distance is not None:
+            print("distance: ", distance)
+
+        print('----------------------------------')
+        pass
 
 # variable
 address = "https://www.google.co.kr"
@@ -325,7 +247,6 @@ Bot.setAddress(address)
 
 Bot.setKeyword('c언어')
 Bot.setIsDev(True)
-Bot.setNumThreads(1)
 
 # Bot start
 start = timeit.default_timer()
