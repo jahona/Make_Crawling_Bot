@@ -119,23 +119,27 @@ class Bot():
 
                 # TextRank의 url2sentences을 사용하기 위함. 전체 문장 가져오기
                 # set_basepagesouce()를 이용해 각 문서의 모든 문장들을 하나의 배열에 append
-                document = TextRank.SentenceTokenizer()
-                sentences = document.url2sentences(pageSource)
-
-                self.__DS.add_sentences_to_base(sentences)
 
                 filelink.append("\n" + link + "\n\n")
                 filesentence.append("\n" + link + "\n\n")
+
+                document = TextRank.SentenceTokenizer()
+                sentences = document.url2sentences(pageSource)
 
                 for sentence in sentences:
                     filesentence.append(sentence + "\n")
 
                 textrank = TextRank.TextRank(pageSource)
 
-                for row in textrank.summarize(20):
-                    filelink.append(row + "\n")
-                    print(row)
-                    print()
+                rows = []
+                for index, row in enumerate(textrank.summarize(20)):
+                    if index < 4:
+                        filelink.append(row + "\n")
+                        print(row)
+                        print()
+                    rows.append(row)
+
+                self.__DS.add_sentences_to_base(rows)
 
                 filelink.append("\n")
 
@@ -166,65 +170,79 @@ class Bot():
         # 외부, 내부 링크들에 대해 TR 수행
         allLinks = externalLinks + internalLinks
         countOfLink = len(allLinks)
-        workAMountOfEachLink = int(float(countOfLink / self.__numThreads));
 
-        workAmountList = []
-        for i in range(0, self.__numThreads):
-            workAmountList.append(workAMountOfEachLink);
+        self.travelLink(allLinks)
 
-        workAmountList[self.__numThreads-1] += countOfLink % self.__numThreads
+        # workAMountOfEachLink = int(float(countOfLink / self.__numThreads));
+        #
+        # workAmountList = []
+        # for i in range(0, self.__numThreads):
+        #     workAmountList.append(workAMountOfEachLink);
+        #
+        # workAmountList[self.__numThreads-1] += countOfLink % self.__numThreads
+        #
+        # print('탐색할 링크의 개수', countOfLink)
+        # print('쓰레드 개수', self.__numThreads)
+        #
+        # threads = []
 
-        print('탐색할 링크의 개수', countOfLink)
-        print('쓰레드 개수', self.__numThreads)
-
-        threads = []
-
-        # 쓰레드 개수만큼 봇 생성
-        self.createWorkerBot()
-
-        for i in range(0, self.__numThreads):
-            print('쓰레드 ', i, ' 가 탐색할 링크의 개수: ', workAmountList[i])
-
-            start = i * workAmountList[0]
-
-            if(i == self.__numThreads-1):
-                end = countOfLink
-            else:
-                end = (i + 1) * workAmountList[0]
-
-            print(start, end)
-
-            thread = threading.Thread(target=self.travelLink, args=(allLinks, start, end, i))
-            thread.start()
-            threads.append(thread)
-
-        for thread in threads:
-            thread.join()
-
-        self.removeWorkerBot()
+        # # 쓰레드 개수만큼 봇 생성
+        # self.createWorkerBot()
+        #
+        # for i in range(0, self.__numThreads):
+        #     print('쓰레드 ', i, ' 가 탐색할 링크의 개수: ', workAmountList[i])
+        #
+        #     start = i * workAmountList[0]
+        #
+        #     if(i == self.__numThreads-1):
+        #         end = countOfLink
+        #     else:
+        #         end = (i + 1) * workAmountList[0]
+        #
+        #     print(start, end)
+        #
+        #     thread = threading.Thread(target=self.travelLink, args=(allLinks, start, end, i))
+        #     thread.start()
+        #     threads.append(thread)
+        #
+        # for thread in threads:
+        #     thread.join()
+        #
+        # self.removeWorkerBot()
 
         self.__bot.quit()
         pass
 
-    def travelLink(self, links, start, end, threadNum):
+    def travelLink(self, links):
         filelink = []
         filesentence = []
         filesuccesslink = []
         filefaillink = []
         filesimilarity = []
 
-        print('Thread Num', threadNum, '실행')
-        for i in range(start, end):
+        for (i, link) in enumerate(links):
             try:
                 print('-----------------------------------------------------')
-                print('link', i, links[i])
-                self.__driverOfWorker[threadNum].go_page(links[i])
-                pageSource = self.__driverOfWorker[threadNum].get_page_source()
+                print('link', i, link)
+                # 페이지 이동
+                self.__bot.go_page(link)
+                pageSource = self.__bot.get_page_source()
 
+                # 문장 추출
                 document = TextRank.SentenceTokenizer()
                 sentences = document.url2sentences(pageSource)
 
-                self.__DS.set_target_sentence(sentences)
+                textrank = TextRank.TextRank(pageSource)
+
+                rows = []
+                for index, row in enumerate(textrank.summarize(20)):
+                    if index < 4:
+                        filelink.append(row + "\n")
+                        print(row)
+                        print()
+                    rows.append(row)
+
+                self.__DS.set_target_sentence(rows)
                 self.__DS.target_vectorizing()
 
                 # 벡터 사이의 거리를 구하기 위해서는 1차원 배열을 이용해야 하기 때문에 [0], 인덱스를 지정합니다.
@@ -235,7 +253,12 @@ class Bot():
 
                 if math.isnan(d):
                     continue
-                    
+
+                for sentence in sentences:
+                    filesentence.append(sentence + "\n")
+                filelink.append("\n" + link + "\n\n")
+                filesentence.append("\n" + link + "\n\n")
+
                 print("=== link %i with dist = %.2f" % (i, d))
 
                 if d < self.__DS.get_best_dist():
@@ -243,19 +266,6 @@ class Bot():
                     self.__DS.set_best_i(i)
 
                 self.__DS.set_dic(i, d)
-
-                filelink.append("\n" + links[i] + "\n\n")
-                filesentence.append("\n" + links[i] + "\n\n")
-
-                for sentence in sentences:
-                    filesentence.append(sentence+"\n")
-
-                textrank = TextRank.TextRank(pageSource)
-
-                for row in textrank.summarize(3):
-                    filelink.append(row + "\n")
-                    print(row)
-                    print()
 
                 filelink.append("\n")
 
@@ -269,19 +279,19 @@ class Bot():
 
                 filesuccesslink.append(links[i]+"\n")
             except:
+                print('error')
                 filefaillink.append(links[i]+"\n")
                 continue
 
-        if threadNum == 0:
-            dic= self.__DS.get_dic()
-            for i,d in sorted(dic.items(), key=lambda dic:dic[1]):
-                filesimilarity.append(str(i) + " : " + str(d)+ "  " + links[i] + "\n")
+        dic= self.__DS.get_dic()
+        for i,d in sorted(dic.items(), key=lambda dic:dic[1]):
+            filesimilarity.append(str(i) + " : " + str(d)+ "  " + links[i] + "\n")
 
-        self.save_File("추출링크_요약문 threadNum: " + str(threadNum), filelink)
-        self.save_File("추출링크_문장 threadNum: " + str(threadNum), filesentence)
-        self.save_File("추출성공_링크 threadNum: " + str(threadNum), filesuccesslink)
-        self.save_File("추출실패_링크 threadNum: " + str(threadNum), filefaillink)
-        self.save_File("구글링크와의_연관도 threadNum: " + str(threadNum), filesimilarity)
+        self.save_File("추출링크_요약문", filelink)
+        self.save_File("추출링크_문장", filesentence)
+        self.save_File("추출성공_링크", filesuccesslink)
+        self.save_File("추출실패_링크", filefaillink)
+        self.save_File("구글링크와의_연관도", filesimilarity)
         pass
 
     def getIntersection(self, keywords):
