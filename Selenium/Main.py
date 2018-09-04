@@ -37,18 +37,24 @@ class Bot():
         self.__baseKeywordsSet = baseKeywordsSet
         pass
 
-    def save_File(self, title, lists):
+    def save_File(self, title, linklist, summarylist, keywordlist, distlist, errorlist):
         now = datetime.datetime.now()
         date = now.strftime('%Y%m%d')
 
         #file open
-        file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_" + title + ".txt", "a", encoding='UTF-8')
+        file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_" + title + ".txt", "w", encoding='UTF-8')
         file.write("------------------------------------------------------------------------------------------------------------------------\n")
-        for list in lists:
+
+        for i, distance in sorted(distlist.items(), key=lambda distlist:distlist[1]):
             try:
-                file.write(list)
+                file.write(str(distance)+"\n\n")
+                file.write(str(linklist[i])+"\n\n")
+                file.write(str(summarylist[i])+"\n\n")
+                file.write(str(keywordlist[i])+"\n\n")
+                file.write(str(errorlist[i])+"\n")
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
             except:
+                file.write("------------------------------------------------------------------------------------------------------------------------\n")
                 pass
         file.close()
 
@@ -61,6 +67,8 @@ class Bot():
 
         externalLinks = []
         internalLinks = []
+
+
 
         # googleLinks에 있는 link들을 탐색
         for link in googleLinks:
@@ -91,7 +99,6 @@ class Bot():
 
         ## 파일에 저장할 data 배열
         datas = []
-
         ## 구글 검색 리스트 첫 화면에서 요약문과 키워드, 그리고 문서 유사도를 위해 기준이 될 문장들을 추출
         for link in googleLinks:
             try:
@@ -137,15 +144,21 @@ class Bot():
         pass
 
     def travelLink(self, links):
+        allLinks = [None] * len(links)
+        allSentences = [None] * len(links)
+        allKeywords = [None] * len(links)
+        alldistances = dict()
+        allerrors = [None] * len(links)
         for (index, link) in enumerate(links):
+            allLinks[index] = link
             try:
                 print('link', link)
-
                 # 페이지 이동
                 try:
                     self.__bot.go_page(link)
                     pageSource = self.__bot.get_page_source()
                 except:
+                    allerrors[index] = '셀러니움 에러'
                     print('셀러니움 에러')
                     continue
 
@@ -153,14 +166,18 @@ class Bot():
                     # 요약문 구하기
                     textrank = TextRank.TextRank(pageSource)
                     summarizes = textrank.summarize(10)
+                    allSentences[index] = summarizes
                     keywords = textrank.keywords()
+                    allKeywords[index] = keywords
                 except:
+                    allerrors[index] = 'TextRank 에러'
                     print('TextRank 에러')
                     continue
 
                 try:
                     self.__validation.target_vectorizing(summarizes)
                 except:
+                    allerrors[index] = 'vectorizer 에러'
                     print('vectorizer 에러')
                     continue
 
@@ -169,18 +186,18 @@ class Bot():
                     # base와 target간에 유클리드 거리 구하기
                     distance = self.__validation.dist_norm()
 
+                    self.__validation.set_dic(index, distance)
+
                     if math.isnan(distance) == True:
+                        self.__validation.set_dic(index, 3)
                         raise ValueError
 
-                    if distance < self.__validation.get_best_dist():
-                        self.__validation.set_best_dist(d)
-                        self.__validation.set_best_i(i)
-
-                    self.__validation.set_dic(index, distance)
                 except ValueError:
+                    allerrors[index] = 'distance 이 nan입니다'
                     print('distance 이 nan입니다')
                     continue
                 except:
+                    allerrors[index] = '유클리드 거리 구하기 에러'
                     print('유클리드 거리 구하기 에러')
                     continue
 
@@ -188,18 +205,22 @@ class Bot():
                 try:
                     self.printCommand(link, summarizes, keywords, distance)
                 except:
+                    allerrors[index] = '파일 입력 에러'
                     print('파일 입력 에러')
                     continue
 
             except Exception as ex:
+                allerrors[index] = '에러가 발생했습니다'
                 print('에러가 발생했습니다', ex)
                 continue
 
-        dic = self.__validation.get_dic()
+        alldistances = self.__validation.get_dic()
 
-        for index, distance in sorted(dic.items(), key=lambda dic:dic[1]):
-            # TODO: 최종적으로 파일 저장
-            pass
+        # for index, distance in sorted(dic.items(), key=lambda dic:dic[1]):
+        #     alldistances[index] = distance
+
+
+        self.save_File("요약문", allLinks, allSentences, allKeywords, alldistances, allerrors)
 
         pass
 

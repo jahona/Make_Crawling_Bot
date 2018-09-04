@@ -34,7 +34,7 @@ class Validation():
         return self.__vectorizer
 
     def get_dic(self):
-        return self.dic
+        return self.__dic
 
     def get_base_sentences(self):
         return self.__baseSentences
