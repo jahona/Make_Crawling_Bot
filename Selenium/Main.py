@@ -100,7 +100,7 @@ class Bot():
         ## 파일에 저장할 data 배열
         datas = []
         ## 구글 검색 리스트 첫 화면에서 요약문과 키워드, 그리고 문서 유사도를 위해 기준이 될 문장들을 추출
-        for link in googleLinks:
+        for (index, link) in enumerate(googleLinks):
             try:
                 print('link', link)
 
@@ -121,13 +121,13 @@ class Bot():
                     continue
 
                 try:
-                    self.__validation.base_vectorizing(summarizes)
+                    self.__validation.sum_str(summarizes)
                 except:
-                    print('vectorizer 에러')
+                    print('sum_str 에러')
                     continue
 
                 try:
-                    self.printCommand(link, summarizes, keywords)
+                    self.printCommand(index, link, summarizes, keywords)
                 except:
                     print('파일 입력 에러')
                     continue
@@ -138,8 +138,11 @@ class Bot():
         # 외부, 내부 링크들에 대해 TR 수행
         allLinks = externalLinks + internalLinks
 
-        self.travelLink(allLinks)
+        # 전체 백터라이징
+        self.__validation.base_vectorizing()
 
+        self.travelLink(allLinks)
+        print("전체 링크수 : ", allLinks)
         self.__bot.quit()
         pass
 
@@ -193,8 +196,8 @@ class Bot():
                         raise ValueError
 
                 except ValueError:
-                    allerrors[index] = 'distance 이 nan입니다'
-                    print('distance 이 nan입니다')
+                    allerrors[index] = 'distance가 nan입니다'
+                    print('distance가 nan입니다')
                     continue
                 except:
                     allerrors[index] = '유클리드 거리 구하기 에러'
@@ -203,7 +206,7 @@ class Bot():
 
                 # 파일 입력
                 try:
-                    self.printCommand(link, summarizes, keywords, distance)
+                    self.printCommand(index, link, summarizes, keywords, distance)
                 except:
                     allerrors[index] = '파일 입력 에러'
                     print('파일 입력 에러')
@@ -242,10 +245,10 @@ class Bot():
 
         return False
 
-    def printCommand(self, link, summarizes, keywords, distance=None):
+    def printCommand(self, index, link, summarizes, keywords, distance=None):
         print('----------------------------------')
 
-        print('link: ', link)
+        print('link', index, link)
 
         for summarize in summarizes:
             print(summarize)
