@@ -11,6 +11,7 @@ from time import sleep
 import Validation
 import time
 import math
+import re
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -20,6 +21,8 @@ class Bot():
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
         self.__validation = Validation.Validation()
+        self.__whiteList = re.compile('ko.wikipedia.org')
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org')
         pass
 
     def setIsDev(self, dev):
@@ -68,10 +71,8 @@ class Bot():
         externalLinks = []
         internalLinks = []
 
-
-
         # googleLinks에 있는 link들을 탐색
-        for link in googleLinks:
+        for index, link in enumerate(googleLinks):
             if "search?" not in str(link):
                 try:
                     # 해당 페이지의 page source get
@@ -79,70 +80,54 @@ class Bot():
 
                     pageSource = self.__bot.get_page_source()
                     bsObj = self.__bot.get_bs_obj(pageSource)
+                except:
+                    print('셀러니움 페이지 이동 에러')
+                    continue
 
+                try:
                     # 외부 링크를 배제를 위한 host 부분 추출
                     excludeUrl = self.__bot.split_address(link)
 
                     # 외부 링크 흭득
-                    for link in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
-                        if self.linkFilter(link) or link in externalLinks:
+                    for externalLink in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
+                        if self.linkFilter(externalLink) or externalLink in externalLinks:
                             continue
-                        externalLinks.append(link)
+                        externalLinks.append(externalLink)
 
                     # 내부 링크 흭득
-                    for link in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
-                        if self.linkFilter(link) or link in internalLinks:
+                    for internalLink in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
+                        if self.linkFilter(internalLink) or internalLink in internalLinks:
                             continue
-                        internalLinks.append(link)
-                except:
-                    pass
+                        internalLinks.append(internalLink)
 
-        ## 파일에 저장할 data 배열
-        datas = []
-        ## 구글 검색 리스트 첫 화면에서 요약문과 키워드, 그리고 문서 유사도를 위해 기준이 될 문장들을 추출
-        for (index, link) in enumerate(googleLinks):
-            try:
-                print('link', link)
-
-                try:
-                    self.__bot.go_page(link)
-                    pageSource = self.__bot.get_page_source()
+                    # TODO: url 탐색 후 쿠키, 세션 삭제
                 except:
-                    print('셀러니움 에러')
+                    print('외부/내부 링크 검색 실패')
                     continue
 
                 try:
-                    # 요약문 구하기
                     textrank = TextRank.TextRank(pageSource)
                     summarizes = textrank.summarize(10)
                     keywords = textrank.keywords()
-                except:
-                    print('TextRank 에러')
-                    continue
-
-                try:
                     self.__validation.sum_str(summarizes)
-                except:
-                    print('sum_str 에러')
-                    continue
-
-                try:
                     self.printCommand(index, link, summarizes, keywords)
                 except:
-                    print('파일 입력 에러')
+                    print('문서 요약 및 키워드 추출 에러')
                     continue
-            except Exception as ex:
-                print('에러가 발생했습니다', ex)
-                continue
-
-        # 외부, 내부 링크들에 대해 TR 수행
-        allLinks = externalLinks + internalLinks
 
         # 전체 백터라이징
         self.__validation.base_vectorizing()
 
+        ## 파일에 저장할 data 배열
+        datas = []
+
+        # 외부, 내부 링크들에 대해 TR 수행
+        allLinks = externalLinks + internalLinks
+
+        print("전체 링크수 : ", len(allLinks))
+
         self.travelLink(allLinks)
-        print("전체 링크수 : ", allLinks)
+
         self.__bot.quit()
         pass
 
@@ -152,76 +137,65 @@ class Bot():
         allKeywords = [None] * len(links)
         alldistances = dict()
         allerrors = [None] * len(links)
+
         for (index, link) in enumerate(links):
             allLinks[index] = link
+
+            # 페이지 이동
             try:
-                print('link', link)
-                # 페이지 이동
-                try:
-                    self.__bot.go_page(link)
-                    pageSource = self.__bot.get_page_source()
-                except:
-                    allerrors[index] = '셀러니움 에러'
-                    print('셀러니움 에러')
-                    continue
+                self.__bot.go_page(link)
+                pageSource = self.__bot.get_page_source()
+            except:
+                allerrors[index] = '셀러니움 에러'
+                print('셀러니움 에러')
+                continue
 
-                try:
-                    # 요약문 구하기
-                    textrank = TextRank.TextRank(pageSource)
-                    summarizes = textrank.summarize(10)
-                    allSentences[index] = summarizes
-                    keywords = textrank.keywords()
-                    allKeywords[index] = keywords
-                except:
-                    allerrors[index] = 'TextRank 에러'
-                    print('TextRank 에러')
-                    continue
+            try:
+                # 요약문 구하기
+                textrank = TextRank.TextRank(pageSource)
+                summarizes = textrank.summarize(10)
+                allSentences[index] = summarizes
+                keywords = textrank.keywords()
+                allKeywords[index] = keywords
+            except:
+                allerrors[index] = 'TextRank 에러'
+                print('TextRank 에러')
+                continue
 
-                try:
-                    self.__validation.target_vectorizing(summarizes)
-                except:
-                    allerrors[index] = 'vectorizer 에러'
-                    print('vectorizer 에러')
-                    continue
+            try:
+                self.__validation.target_vectorizing(summarizes)
+            except:
+                allerrors[index] = 'vectorizer 에러'
+                print('vectorizer 에러')
+                continue
 
-                # 유클리드 거리 구하기
-                try:
-                    # base와 target간에 유클리드 거리 구하기
-                    distance = self.__validation.dist_norm()
+            # 유클리드 거리 구하기
+            try:
+                # base와 target간에 유클리드 거리 구하기
+                distance = self.__validation.dist_norm()
 
-                    self.__validation.set_dic(index, distance)
+                self.__validation.set_dic(index, distance)
 
-                    if math.isnan(distance) == True:
-                        self.__validation.set_dic(index, 3)
-                        raise ValueError
+                if math.isnan(distance) == True:
+                    self.__validation.set_dic(index, 3)
+                    raise ValueError
 
-                except ValueError:
-                    allerrors[index] = 'distance가 nan입니다'
-                    print('distance가 nan입니다')
-                    continue
-                except:
-                    allerrors[index] = '유클리드 거리 구하기 에러'
-                    print('유클리드 거리 구하기 에러')
-                    continue
-
-                # 파일 입력
-                try:
-                    self.printCommand(index, link, summarizes, keywords, distance)
-                except:
-                    allerrors[index] = '파일 입력 에러'
-                    print('파일 입력 에러')
-                    continue
-
-            except Exception as ex:
-                allerrors[index] = '에러가 발생했습니다'
-                print('에러가 발생했습니다', ex)
+                self.printCommand(index, link, summarizes, keywords, distance)
+            except ValueError:
+                allerrors[index] = 'distance가 nan입니다'
+                print('distance가 nan입니다')
+                continue
+            except:
+                allerrors[index] = '유클리드 거리 구하기 에러'
+                print('유클리드 거리 구하기 에러')
                 continue
 
         alldistances = self.__validation.get_dic()
 
         # for index, distance in sorted(dic.items(), key=lambda dic:dic[1]):
+        #     if(index > 20):
+        #         break
         #     alldistances[index] = distance
-
 
         self.save_File("요약문", allLinks, allSentences, allKeywords, alldistances, allerrors)
 
@@ -235,14 +209,17 @@ class Bot():
             return False
 
     def linkFilter(self, link):
-        blackList = ["search", "facebook", "wikipedia.org", "youtube", "mail:to"]
-        whiteList = ["ko.wikipedia.org"]
+        m = self.__whiteList.search(str(link))
+        # 화이트 리스트에 있다면 필터하지 않기
+        if(m != None):
+            return False
 
-        link = str(link)
-
-        if link in blackList and link not in whiteList:
+        # 블랙 리스트에 있다면 필터하기
+        m = self.__blackList.search(str(link))
+        if(m != None):
             return True
 
+        # 아무것도 포함되지 않는다면 필터하지 않기
         return False
 
     def printCommand(self, index, link, summarizes, keywords, distance=None):

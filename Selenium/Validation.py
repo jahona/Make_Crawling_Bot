@@ -81,21 +81,17 @@ class Validation():
 
     # 기준이 되는 문자열 배열들에 한해 vectorizer
     def base_vectorizing(self):
-        rows = []
-        rows.append(self.__str)
-        print(self.__str)
-        self.__post_vec = self.__vectorizer.fit_transform(rows)
+        self.__post_vec = self.__vectorizer.fit_transform([self.__str])
 
     # 타겟이 되는 문자열들에 한해 vectorizer
     def target_vectorizing(self, sentences):
-        rows = []
         str = ""
-        for index, row in enumerate(sentences):
-            str += row
-        rows.append(str)
 
-        self.__new_post_vec = self.__vectorizer.transform(rows)
+        for index, sentence in enumerate(sentences):
+            str += ' ' + sentence
+
+        self.__new_post_vec = self.__vectorizer.transform([str])
 
     def sum_str(self, sentences):
         for row in sentences:
-            self.__str += row
+            self.__str += ' ' + row
