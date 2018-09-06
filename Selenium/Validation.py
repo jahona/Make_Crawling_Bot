@@ -10,7 +10,7 @@ class Validation():
         self.__best_dist = sys.maxsize
         self.__best_doc = None
         self.__best_i = None
-        self.__vectorizer = CountVectorizer(min_df=1, stop_words="english")
+        self.__vectorizer = CountVectorizer()
         self.__dic = dict()
 
         self.__baseSentences = []
@@ -19,6 +19,8 @@ class Validation():
         self.__new_post_vec = None
 
         self.__base_normalized = None
+
+        self.__str = ""
 
     ## get
     def get_best_dist(self):
@@ -34,7 +36,7 @@ class Validation():
         return self.__vectorizer
 
     def get_dic(self):
-        return self.dic
+        return self.__dic
 
     def get_base_sentences(self):
         return self.__baseSentences
@@ -78,17 +80,22 @@ class Validation():
         return np.linalg.norm(delta)
 
     # 기준이 되는 문자열 배열들에 한해 vectorizer
-    def base_vectorizing(self, sentences):
+    def base_vectorizing(self):
         rows = []
-        for index, row in enumerate(sentences):
-            rows.append(row)
-
+        rows.append(self.__str)
+        print(self.__str)
         self.__post_vec = self.__vectorizer.fit_transform(rows)
 
     # 타겟이 되는 문자열들에 한해 vectorizer
     def target_vectorizing(self, sentences):
         rows = []
+        str = ""
         for index, row in enumerate(sentences):
-            rows.append(row)
+            str += row
+        rows.append(str)
 
         self.__new_post_vec = self.__vectorizer.transform(rows)
+
+    def sum_str(self, sentences):
+        for row in sentences:
+            self.__str += row
