@@ -23,6 +23,7 @@ class Bot():
         self.__validation = Validation.Validation()
         self.__whiteList = re.compile('ko.wikipedia.org')
         self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org')
+        self.__sentenceTokenizer = TextRank.SentenceTokenizer()
         pass
 
     def setIsDev(self, dev):
@@ -74,46 +75,48 @@ class Bot():
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
             if self.linkFilter(link):
-                try:
-                    # 해당 페이지의 page source get
-                    self.__bot.go_page(link)
+                continue
+                
+            try:
+                # 해당 페이지의 page source get
+                self.__bot.go_page(link)
 
-                    pageSource = self.__bot.get_page_source()
-                    bsObj = self.__bot.get_bs_obj(pageSource)
-                except:
-                    print('셀러니움 페이지 이동 에러')
-                    continue
+                pageSource = self.__bot.get_page_source()
+                bsObj = self.__bot.get_bs_obj(pageSource)
+            except:
+                print('셀러니움 페이지 이동 에러')
+                continue
 
-                try:
-                    # 외부 링크를 배제를 위한 host 부분 추출
-                    excludeUrl = self.__bot.split_address(link)
+            try:
+                # 외부 링크를 배제를 위한 host 부분 추출
+                excludeUrl = self.__bot.split_address(link)
 
-                    # 외부 링크 흭득
-                    for externalLink in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
-                        if self.linkFilter(externalLink) or externalLink in externalLinks:
-                            continue
-                        externalLinks.append(externalLink)
+                # 외부 링크 흭득
+                for externalLink in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
+                    if self.linkFilter(externalLink) or externalLink in externalLinks:
+                        continue
+                    externalLinks.append(externalLink)
 
-                    # 내부 링크 흭득
-                    for internalLink in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
-                        if self.linkFilter(internalLink) or internalLink in internalLinks:
-                            continue
-                        internalLinks.append(internalLink)
+                # 내부 링크 흭득
+                for internalLink in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
+                    if self.linkFilter(internalLink) or internalLink in internalLinks:
+                        continue
+                    internalLinks.append(internalLink)
 
-                    # TODO: url 탐색 후 쿠키, 세션 삭제
-                except:
-                    print('외부/내부 링크 검색 실패')
-                    continue
+                # TODO: url 탐색 후 쿠키, 세션 삭제
+            except:
+                print('외부/내부 링크 검색 실패')
+                continue
 
-                try:
-                    textrank = TextRank.TextRank(pageSource)
-                    summarizes = textrank.summarize(10)
-                    keywords = textrank.keywords()
-                    self.__validation.sum_str(summarizes)
-                    self.printCommand(index, link, summarizes, keywords)
-                except:
-                    print('문서 요약 및 키워드 추출 에러')
-                    continue
+            try:
+                textrank = TextRank.TextRank(pageSource)
+                summarizes = textrank.summarize(10)
+                keywords = textrank.keywords()
+                self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(summarizes))
+                self.printCommand(index, link, summarizes, keywords)
+            except:
+                print('문서 요약 및 키워드 추출 에러')
+                continue
 
         # 전체 백터라이징
         self.__validation.base_vectorizing()
@@ -163,7 +166,7 @@ class Bot():
                 continue
 
             try:
-                self.__validation.target_vectorizing(summarizes)
+                self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
             except:
                 allerrors[index] = 'vectorizer 에러'
                 print('vectorizer 에러')
