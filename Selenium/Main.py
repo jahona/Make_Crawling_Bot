@@ -76,7 +76,7 @@ class Bot():
         for index, link in enumerate(googleLinks):
             if self.linkFilter(link):
                 continue
-                
+
             try:
                 # 해당 페이지의 page source get
                 self.__bot.go_page(link)
@@ -93,13 +93,13 @@ class Bot():
 
                 # 외부 링크 흭득
                 for externalLink in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
-                    if self.linkFilter(externalLink) or externalLink in externalLinks:
+                    if self.linkFilter(externalLink) or externalLink in externalLinks or externalLink in googleLinks:
                         continue
                     externalLinks.append(externalLink)
 
                 # 내부 링크 흭득
                 for internalLink in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
-                    if self.linkFilter(internalLink) or internalLink in internalLinks:
+                    if self.linkFilter(internalLink) or internalLink in internalLinks or internalLink in googleLinks:
                         continue
                     internalLinks.append(internalLink)
 
