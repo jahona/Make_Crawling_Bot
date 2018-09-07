@@ -73,7 +73,7 @@ class Bot():
 
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
-            if "search?" not in str(link):
+            if self.linkFilter(link):
                 try:
                     # 해당 페이지의 page source get
                     self.__bot.go_page(link)
