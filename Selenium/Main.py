@@ -23,6 +23,8 @@ class Bot():
         self.__validation = Validation.Validation()
         self.__whiteList = re.compile('ko.wikipedia.org')
         self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org')
+        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg)$');
+
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
         pass
 
@@ -212,13 +214,18 @@ class Bot():
             return False
 
     def linkFilter(self, link):
-        m = self.__whiteList.search(str(link))
+        stlink = str(link)
+        m = self.__whiteList.search(stlink)
         # 화이트 리스트에 있다면 필터하지 않기
         if(m != None):
             return False
 
+        m = self.__blackListExtension.search(stlink)
+        if(m != None):
+            return True
+
         # 블랙 리스트에 있다면 필터하기
-        m = self.__blackList.search(str(link))
+        m = self.__blackList.search(stlink)
         if(m != None):
             return True
 
