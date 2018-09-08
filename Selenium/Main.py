@@ -179,8 +179,6 @@ class Bot():
                 # base와 target간에 유클리드 거리 구하기
                 distance = self.__validation.dist_norm()
 
-                self.__validation.set_dic(index, distance)
-
                 if math.isnan(distance) == True:
                     raise ValueError
 
