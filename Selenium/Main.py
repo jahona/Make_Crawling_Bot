@@ -26,6 +26,16 @@ class Bot():
         self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg)$');
 
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
+
+        # 정상적으로 종료된 링크 저장
+        self.__linkDict = dict()
+        self.__sentenceDict = dict()
+        self.__keywordDict = dict()
+        self.__distanceDict = dict()
+
+        # 에러난 링크/메시지 저장
+        self.__errorLinkDict = dict()
+        self.__errorMessageDict = dict()
         pass
 
     def setIsDev(self, dev):
@@ -43,7 +53,7 @@ class Bot():
         self.__baseKeywordsSet = baseKeywordsSet
         pass
 
-    def save_File(self, title, linklist, summarylist, keywordlist, distlist, errorlist):
+    def save_File(self, title):
         now = datetime.datetime.now()
         date = now.strftime('%Y%m%d')
 
@@ -51,17 +61,31 @@ class Bot():
         file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_" + title + ".txt", "w", encoding='UTF-8')
         file.write("------------------------------------------------------------------------------------------------------------------------\n")
 
-        for i, distance in sorted(distlist.items(), key=lambda distlist:distlist[1]):
+        distanceDict = self.__distanceDict
+
+        for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
             try:
-                file.write(str(distance)+"\n\n")
-                file.write(str(linklist[i])+"\n\n")
-                file.write(str(summarylist[i])+"\n\n")
-                file.write(str(keywordlist[i])+"\n\n")
-                # file.write(str(errorlist[i])+"\n")
+                file.write("link " + str(i) + ":" + str(self.__linkDict[i]) + "\n\n")
+                file.write("sentence : " + str(self.__sentenceDict[i]) + "\n\n")
+                file.write("keyword : " + str(self.__keywordDict[i]) + "\n\n")
+                file.write("distance : " + str(distance) + "\n\n")
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
             except:
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
                 pass
+
+        errorFile = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_" + title + "_error.txt", "w", encoding='UTF-8')
+        errorFile.write("------------------------------------------------------------------------------------------------------------------------\n")
+
+        for i, link in self.__errorLinkDict.items():
+            try:
+                errorFile.write("link " + str(i) + ":" + link + "\n\n")
+                errorFile.write("error message : " + str(self.__errorMessageDict[i]) + "\n\n")
+                errorFile.write("------------------------------------------------------------------------------------------------------------------------\n")
+            except:
+                errorFile.write("------------------------------------------------------------------------------------------------------------------------\n")
+                pass
+
         file.close()
 
     def bot_start(self):
@@ -85,8 +109,11 @@ class Bot():
 
                 pageSource = self.__bot.get_page_source()
                 bsObj = self.__bot.get_bs_obj(pageSource)
-            except:
-                print('셀러니움 페이지 이동 에러')
+            except Exception as e:
+                # self.__errorLinkDict[index] = link
+                # self.__errorMessageDict[index] = e
+                print(e)
+                print('셀러니움 에러')
                 continue
 
             try:
@@ -106,8 +133,11 @@ class Bot():
                     internalLinks.append(internalLink)
 
                 # TODO: url 탐색 후 쿠키, 세션 삭제
-            except:
-                print('외부/내부 링크 검색 실패')
+            except Exception as e:
+                # self.__errorLinkDict[index] = link
+                # self.__errorMessageDict[index] = e
+                print(e)
+                print('외부/내부 링크 흭득 에러')
                 continue
 
             try:
@@ -115,10 +145,18 @@ class Bot():
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(summarizes))
-                self.printCommand(index, link, summarizes, keywords)
-            except:
-                print('문서 요약 및 키워드 추출 에러')
+            except Exception as e:
+                # self.__errorLinkDict[index] = link
+                # self.__errorMessageDict[index] = e
+                print(e)
+                print('문서 요약 에러')
                 continue
+
+            self.printCommand(index, link, summarizes, keywords)
+
+            # self.__linkDict[index] = link
+            # self.__sentenceDict[index] = summarizes
+            # self.__keywordDict[index] = keywords
 
         # 전체 백터라이징
         self.__validation.base_vectorizing()
@@ -137,21 +175,18 @@ class Bot():
         pass
 
     def travelLink(self, links):
-        allLinks = [None] * len(links)
-        allSentences = [None] * len(links)
-        allKeywords = [None] * len(links)
-        alldistances = dict()
-        allerrors = [None] * len(links)
-
         for (index, link) in enumerate(links):
-            allLinks[index] = link
+            if(index > 20):
+                break
 
             # 페이지 이동
             try:
                 self.__bot.go_page(link)
                 pageSource = self.__bot.get_page_source()
-            except:
-                allerrors[index] = '셀러니움 에러'
+            except Exception as e:
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = e
+                print(e)
                 print('셀러니움 에러')
                 continue
 
@@ -159,18 +194,20 @@ class Bot():
                 # 요약문 구하기
                 textrank = TextRank.TextRank(pageSource)
                 summarizes = textrank.summarize(10)
-                allSentences[index] = summarizes
                 keywords = textrank.keywords()
-                allKeywords[index] = keywords
-            except:
-                allerrors[index] = 'TextRank 에러'
+            except Exception as e:
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = e
+                print(e)
                 print('TextRank 에러')
                 continue
 
             try:
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
-            except:
-                allerrors[index] = 'vectorizer 에러'
+            except Exception as e:
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = e
+                print(e)
                 print('vectorizer 에러')
                 continue
 
@@ -183,25 +220,33 @@ class Bot():
                     raise ValueError
 
                 self.__validation.set_dic(index, distance)
-
-                self.printCommand(index, link, summarizes, keywords, distance)
-            except ValueError:
-                allerrors[index] = 'distance가 nan입니다'
+            except ValueError as e:
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = e
+                print(e)
                 print('distance가 nan입니다')
                 continue
             except:
-                allerrors[index] = '유클리드 거리 구하기 에러'
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = '유클리드 거리 구하기 에러'
+
                 print('유클리드 거리 구하기 에러')
                 continue
 
-        alldistances = self.__validation.get_dic()
+            self.printCommand(index, link, summarizes, keywords, distance)
+
+            self.__linkDict[index] = link
+            self.__sentenceDict[index] = summarizes
+            self.__keywordDict[index] = keywords
+
+        self.__distanceDict = self.__validation.get_dic()
 
         # for index, distance in sorted(dic.items(), key=lambda dic:dic[1]):
         #     if(index > 20):
         #         break
         #     alldistances[index] = distance
 
-        self.save_File("요약문", allLinks, allSentences, allKeywords, alldistances, allerrors)
+        self.save_File("요약문")
 
         pass
 
