@@ -57,7 +57,7 @@ class Bot():
                 file.write(str(linklist[i])+"\n\n")
                 file.write(str(summarylist[i])+"\n\n")
                 file.write(str(keywordlist[i])+"\n\n")
-                file.write(str(errorlist[i])+"\n")
+                # file.write(str(errorlist[i])+"\n")
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
             except:
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
@@ -182,8 +182,9 @@ class Bot():
                 self.__validation.set_dic(index, distance)
 
                 if math.isnan(distance) == True:
-                    self.__validation.set_dic(index, 3)
                     raise ValueError
+
+                self.__validation.set_dic(index, distance)
 
                 self.printCommand(index, link, summarizes, keywords, distance)
             except ValueError:
