@@ -110,8 +110,6 @@ class Bot():
                 pageSource = self.__bot.get_page_source()
                 bsObj = self.__bot.get_bs_obj(pageSource)
             except Exception as e:
-                # self.__errorLinkDict[index] = link
-                # self.__errorMessageDict[index] = e
                 print(e)
                 print('셀러니움 에러')
                 continue
@@ -134,8 +132,6 @@ class Bot():
 
                 # TODO: url 탐색 후 쿠키, 세션 삭제
             except Exception as e:
-                # self.__errorLinkDict[index] = link
-                # self.__errorMessageDict[index] = e
                 print(e)
                 print('외부/내부 링크 흭득 에러')
                 continue
@@ -146,17 +142,11 @@ class Bot():
                 keywords = textrank.keywords()
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(summarizes))
             except Exception as e:
-                # self.__errorLinkDict[index] = link
-                # self.__errorMessageDict[index] = e
                 print(e)
                 print('문서 요약 에러')
                 continue
 
             self.printCommand(index, link, summarizes, keywords)
-
-            # self.__linkDict[index] = link
-            # self.__sentenceDict[index] = summarizes
-            # self.__keywordDict[index] = keywords
 
         # 전체 백터라이징
         self.__validation.base_vectorizing()
@@ -176,9 +166,6 @@ class Bot():
 
     def travelLink(self, links):
         for (index, link) in enumerate(links):
-            if(index > 20):
-                break
-
             # 페이지 이동
             try:
                 self.__bot.go_page(link)
