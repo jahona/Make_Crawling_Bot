@@ -140,6 +140,11 @@ class Bot():
                 textrank = TextRank.TextRank(pageSource)
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
+
+                for sentence in textrank.sentences:
+                    if self.__keyword in sentence:
+                        summarizes.append(sentence)
+
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(summarizes))
             except Exception as e:
                 print(e)
@@ -159,13 +164,22 @@ class Bot():
 
         print("전체 링크수 : ", len(allLinks))
 
+        # 검색어에 공백 삭제
+        self.__keyword = self.__keyword.replace(" ", "")
+
+        # 외부/내부 링크 탐색 시작
         self.travelLink(allLinks)
+
+        self.save_File("요약문")
 
         self.__bot.quit()
         pass
 
     def travelLink(self, links):
         for (index, link) in enumerate(links):
+            # if(index > 30):
+            #     break
+
             # 페이지 이동
             try:
                 self.__bot.go_page(link)
@@ -222,19 +236,20 @@ class Bot():
 
             self.printCommand(index, link, summarizes, keywords, distance)
 
+            flag = False
+            for keyword in keywords:
+                if keyword in self.__keyword:
+                    flag = True
+                    break
+
+            if(flag == False):
+                continue
+
             self.__linkDict[index] = link
             self.__sentenceDict[index] = summarizes
             self.__keywordDict[index] = keywords
 
         self.__distanceDict = self.__validation.get_dic()
-
-        # for index, distance in sorted(dic.items(), key=lambda dic:dic[1]):
-        #     if(index > 20):
-        #         break
-        #     alldistances[index] = distance
-
-        self.save_File("요약문")
-
         pass
 
     def getIntersection(self, keywords):
@@ -287,7 +302,7 @@ address = "https://www.google.co.kr"
 Bot = Bot()
 Bot.setAddress(address)
 
-Bot.setKeyword('c언어')
+Bot.setKeyword('커피')
 Bot.setIsDev(True)
 
 # Bot start
