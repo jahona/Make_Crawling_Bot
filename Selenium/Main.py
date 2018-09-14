@@ -28,8 +28,8 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__bot = CrawlerBot.Selenium()
         self.__validation = Validation.Validation()
         self.__whiteList = re.compile('ko.wikipedia.org')
-        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live')
-        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp)$');
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram')
+        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp|tar|xz|pkg|zip)$');
 
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
 
@@ -252,9 +252,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         # 전체 백터라이징
         self.__validation.base_vectorizing()
 
-        ## 파일에 저장할 data 배열
-        datas = []
-
         # 외부, 내부 링크들에 대해 TR 수행
         allLinks = externalLinks + internalLinks
 
@@ -274,8 +271,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             Dictindex = index + baselength
             #프로그레스바 값 설정
             # self.get_progressbar_thread.setValue(int(index/8*100))
-            # if index == 5:
-            #     break
             #페이지 이동
             try:
                 self.__bot.go_page(link)
@@ -315,6 +310,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                     break
 
             if(flag == False):
+                print('검색어가 키워드에 없습니다.')
                 continue
 
             # 유클리드 거리 구하기
