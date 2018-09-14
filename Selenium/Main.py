@@ -223,11 +223,20 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 Basesummarizes = []
                 textrank = TextRank.TextRank(pageSource)
                 summarizes = textrank.summarize(10)
+                keywords = textrank.keywords()
+
+                # 구글 링크 문서의 키워드에 __keyword가 포함되어 있지 않다면 예외처리
+                flag = False
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = True
+                        break
+
+                if(flag == False):
+                    continue
 
                 for sentence in summarizes:
                     Basesummarizes.append(sentence)
-
-                keywords = textrank.keywords()
 
                 for sentence in textrank.sentences:
                     if self.__keyword in sentence:
