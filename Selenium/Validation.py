@@ -82,6 +82,7 @@ class Validation():
     # 기준이 되는 문자열 배열들에 한해 vectorizer
     def base_vectorizing(self):
         self.__post_vec = self.__vectorizer.fit_transform([self.__str])
+        self.__str = ""
 
     # 타겟이 되는 문자열들에 한해 vectorizer
     def target_vectorizing(self, sentences):

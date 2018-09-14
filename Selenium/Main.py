@@ -28,8 +28,8 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__bot = CrawlerBot.Selenium()
         self.__validation = Validation.Validation()
         self.__whiteList = re.compile('ko.wikipedia.org')
-        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org')
-        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg)$');
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live')
+        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp)$');
 
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
 
@@ -87,12 +87,16 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         file.write("------------------------------------------------------------------------------------------------------------------------\n")
 
         distanceDict = self.__distanceDict
-
+        row = 0
         for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
             try:
-                file.write("link " + str(i+1) + " : " + str(self.__linkDict[i]) + "\n\n")
-                file.write("key sentence : " + str(self.__sentenceDict[i]) + "\n\n")
-                file.write("keyword : " + str(self.__keywordDict[i]) + "\n\n")
+                row += 1
+                file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
+                file.write("key sentence : ")
+                for j, sentence in enumerate(self.__sentenceDict[i]):
+                    if j<5:
+                        file.write(sentence + "\n")
+                file.write("\nkeyword : " + str(self.__keywordDict[i]) + "\n\n")
                 file.write("distance : " + str(distance) + "\n\n")
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
             except:
@@ -124,15 +128,14 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             contents = ""
             contents += "key sentence\n"
 
-            for sentence in self.__sentenceDict[i]:
-                if len(sentence) > 100:
-                    contents += sentence[0:97]
-                    contents += "...\n"
-                else:
-                    contents += str(sentence) + "\n"
+            for j, sentence in enumerate(self.__sentenceDict[i]):
+                if j<5:
+                    if len(sentence) > 100:
+                        contents += sentence[0:97]
+                        contents += "...\n"
+                    else:
+                        contents += str(sentence) + "\n"
 
-            # for sentence in self.__sentenceDict[i]:
-            #     contents += str(sentence) + "\n"
             contents += "\n"
             contents += "keyword\n" + str(self.__keywordDict[i])
 
@@ -217,15 +220,20 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 continue
 
             try:
+                Basesummarizes = []
                 textrank = TextRank.TextRank(pageSource)
                 summarizes = textrank.summarize(10)
+
+                for sentence in summarizes:
+                    Basesummarizes.append(sentence)
+
                 keywords = textrank.keywords()
 
                 for sentence in textrank.sentences:
                     if self.__keyword in sentence:
-                        summarizes.append(sentence)
+                        Basesummarizes.append(sentence)
 
-                self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(summarizes))
+                self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
 
                 self.__validation.set_dic(index, 0)
             except Exception as e:
@@ -266,7 +274,8 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             Dictindex = index + baselength
             #프로그레스바 값 설정
             # self.get_progressbar_thread.setValue(int(index/8*100))
-
+            # if index == 5:
+            #     break
             #페이지 이동
             try:
                 self.__bot.go_page(link)
@@ -373,8 +382,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         print('link', index, link)
 
-        for summarize in summarizes:
-            print(summarize)
+        for i, summarize in enumerate(summarizes):
+            if i<5:
+                print(summarize)
 
         print(set(keywords))
 

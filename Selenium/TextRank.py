@@ -146,7 +146,8 @@ class TextRank(object):
 
             index.sort()
 
-            summary.append(self.sentences[idx])
+            for idx in index:
+                summary.append(self.sentences[idx])
 
             return summary
         except:
