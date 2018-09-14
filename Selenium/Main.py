@@ -5,7 +5,6 @@ import os
 import TextRank
 import sys
 import timeit
-import threading
 import logging
 from time import sleep
 import Validation
@@ -13,17 +12,24 @@ import time
 import math
 import re
 
+from PyQt4.QtGui import *
+from PyQt4 import QtGui
+import MainWindow
+import pickle
+
+import webbrowser
+
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 random.seed(datetime.datetime.now())
 
-class Bot():
+class Bot(QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
         self.__bot = CrawlerBot.Selenium()
         self.__validation = Validation.Validation()
         self.__whiteList = re.compile('ko.wikipedia.org')
-        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org')
-        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg)$');
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org')
+        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg)$');
 
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
 
@@ -36,7 +42,26 @@ class Bot():
         # 에러난 링크/메시지 저장
         self.__errorLinkDict = dict()
         self.__errorMessageDict = dict()
+
+        #GUI 추가------------------------------------------------------------
+        QMainWindow.__init__(self)
+        self.setupUi(self)
+
+        # 검색 버튼 이벤트 핸들링
+        self.btnSearch.clicked.connect(self.bot_start)
+        self.btnSearch.setAutoDefault(True)
+        # 저장 버튼 이벤트 핸들링
+        self.btnSave.clicked.connect(self.save_File)
+
+        self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
+
+        # 메인윈도우 보이기
+        self.show()
+        #GUI 추가------------------------------------------------------------
+
         pass
+    def get_CrawlerBot(self):
+        return self.__bot
 
     def setIsDev(self, dev):
         self.__dev = dev
@@ -53,20 +78,20 @@ class Bot():
         self.__baseKeywordsSet = baseKeywordsSet
         pass
 
-    def save_File(self, title):
+    def save_File(self):
         now = datetime.datetime.now()
         date = now.strftime('%Y%m%d')
 
         #file open
-        file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_" + title + ".txt", "w", encoding='UTF-8')
+        file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + ".txt", "w", encoding='UTF-8')
         file.write("------------------------------------------------------------------------------------------------------------------------\n")
 
         distanceDict = self.__distanceDict
 
         for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
             try:
-                file.write("link " + str(i) + ":" + str(self.__linkDict[i]) + "\n\n")
-                file.write("sentence : " + str(self.__sentenceDict[i]) + "\n\n")
+                file.write("link " + str(i+1) + " : " + str(self.__linkDict[i]) + "\n\n")
+                file.write("key sentence : " + str(self.__sentenceDict[i]) + "\n\n")
                 file.write("keyword : " + str(self.__keywordDict[i]) + "\n\n")
                 file.write("distance : " + str(distance) + "\n\n")
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
@@ -74,7 +99,7 @@ class Bot():
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
                 pass
 
-        errorFile = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_" + title + "_error.txt", "w", encoding='UTF-8')
+        errorFile = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_error.txt", "w", encoding='UTF-8')
         errorFile.write("------------------------------------------------------------------------------------------------------------------------\n")
 
         for i, link in self.__errorLinkDict.items():
@@ -88,7 +113,58 @@ class Bot():
 
         file.close()
 
+    def GUI_SET(self):
+        self.tableWidget.setRowCount(0)
+        row = 0
+        distanceDict = self.__distanceDict
+
+        self.tableWidget.setRowCount(len(distanceDict))
+
+        for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
+            contents = ""
+            contents += "key sentence\n"
+
+            for sentence in self.__sentenceDict[i]:
+                if len(sentence) > 100:
+                    contents += sentence[0:97]
+                    contents += "...\n"
+                else:
+                    contents += str(sentence) + "\n"
+
+            # for sentence in self.__sentenceDict[i]:
+            #     contents += str(sentence) + "\n"
+            contents += "\n"
+            contents += "keyword\n" + str(self.__keywordDict[i])
+
+            self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
+            self.tableWidget.item(row, 0).setTextColor(QtGui.QColor(0, 0, 255))
+            self.tableWidget.setItem(row, 1, QTableWidgetItem(contents))
+            row += 1
+
+        self.tableWidget.resizeColumnToContents(1)
+        self.tableWidget.resizeRowsToContents()
+
+    def OpenLink(self, item):
+        if item.column() == 0:
+            webbrowser.open(self.tableWidget.item(item.row(), item.column()).text())
+
     def bot_start(self):
+        # 정상적으로 종료된 링크 저장
+        self.__linkDict = dict()
+        self.__sentenceDict = dict()
+        self.__keywordDict = dict()
+        self.__distanceDict = dict()
+
+        # 에러난 링크/메시지 저장
+        self.__errorLinkDict = dict()
+        self.__errorMessageDict = dict()
+
+        start = timeit.default_timer()
+
+        #keyword를 GUI에서 입력받고 setting한다.
+        keyword = self.lineEdit.text()
+        Bot.setKeyword(keyword)
+
         # Google 에 해당 키워드 검색 후 화면 이동
         self.__bot.search_keyword_based_on_google(self.__keyword)
 
@@ -101,8 +177,8 @@ class Bot():
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
             if self.linkFilter(link):
+                del googleLinks[index]
                 continue
-
             try:
                 # 해당 페이지의 page source get
                 self.__bot.go_page(link)
@@ -110,6 +186,8 @@ class Bot():
                 pageSource = self.__bot.get_page_source()
                 bsObj = self.__bot.get_bs_obj(pageSource)
             except Exception as e:
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = e
                 print(e)
                 print('셀러니움 에러')
                 continue
@@ -132,6 +210,8 @@ class Bot():
 
                 # TODO: url 탐색 후 쿠키, 세션 삭제
             except Exception as e:
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = e
                 print(e)
                 print('외부/내부 링크 흭득 에러')
                 continue
@@ -140,13 +220,26 @@ class Bot():
                 textrank = TextRank.TextRank(pageSource)
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
+
+                for sentence in textrank.sentences:
+                    if self.__keyword in sentence:
+                        summarizes.append(sentence)
+
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(summarizes))
+
+                self.__validation.set_dic(index, 0)
             except Exception as e:
+                self.__errorLinkDict[index] = link
+                self.__errorMessageDict[index] = e
                 print(e)
                 print('문서 요약 에러')
                 continue
 
-            self.printCommand(index, link, summarizes, keywords)
+            self.printCommand(index+1, link, summarizes, keywords)
+
+            self.__linkDict[index] = link
+            self.__sentenceDict[index] = summarizes
+            self.__keywordDict[index] = keywords
 
         # 전체 백터라이징
         self.__validation.base_vectorizing()
@@ -159,20 +252,28 @@ class Bot():
 
         print("전체 링크수 : ", len(allLinks))
 
-        self.travelLink(allLinks)
+        self.__keyword = self.__keyword.replace(" ", "")
 
-        self.__bot.quit()
+        # 외부/내부 링크 탐색 시작
+        self.travelLink(allLinks, len(googleLinks))
+
+        stop = timeit.default_timer()
+        print(stop - start)
         pass
 
-    def travelLink(self, links):
+    def travelLink(self, links, baselength):
         for (index, link) in enumerate(links):
-            # 페이지 이동
+            Dictindex = index + baselength
+            #프로그레스바 값 설정
+            # self.get_progressbar_thread.setValue(int(index/8*100))
+
+            #페이지 이동
             try:
                 self.__bot.go_page(link)
                 pageSource = self.__bot.get_page_source()
             except Exception as e:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = e
+                self.__errorLinkDict[Dictindex] = link
+                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('셀러니움 에러')
                 continue
@@ -183,8 +284,8 @@ class Bot():
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
             except Exception as e:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = e
+                self.__errorLinkDict[Dictindex] = link
+                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('TextRank 에러')
                 continue
@@ -192,10 +293,19 @@ class Bot():
             try:
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
             except Exception as e:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = e
+                self.__errorLinkDict[Dictindex] = link
+                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('vectorizer 에러')
+                continue
+
+            flag = False
+            for keyword in keywords:
+                if keyword in self.__keyword:
+                    flag = True
+                    break
+
+            if(flag == False):
                 continue
 
             # 유클리드 거리 구하기
@@ -206,34 +316,29 @@ class Bot():
                 if math.isnan(distance) == True:
                     raise ValueError
 
-                self.__validation.set_dic(index, distance)
+                self.__validation.set_dic(Dictindex, distance)
             except ValueError as e:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = e
+                self.__errorLinkDict[Dictindex] = link
+                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('distance가 nan입니다')
                 continue
             except:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = '유클리드 거리 구하기 에러'
+                self.__errorLinkDict[Dictindex] = link
+                self.__errorMessageDict[Dictindex] = '유클리드 거리 구하기 에러'
 
                 print('유클리드 거리 구하기 에러')
                 continue
 
-            self.printCommand(index, link, summarizes, keywords, distance)
+            self.printCommand(Dictindex+1, link, summarizes, keywords, distance)
 
-            self.__linkDict[index] = link
-            self.__sentenceDict[index] = summarizes
-            self.__keywordDict[index] = keywords
+            self.__linkDict[Dictindex] = link
+            self.__sentenceDict[Dictindex] = summarizes
+            self.__keywordDict[Dictindex] = keywords
 
         self.__distanceDict = self.__validation.get_dic()
 
-        # for index, distance in sorted(dic.items(), key=lambda dic:dic[1]):
-        #     if(index > 20):
-        #         break
-        #     alldistances[index] = distance
-
-        self.save_File("요약문")
+        self.GUI_SET()
 
         pass
 
@@ -281,17 +386,19 @@ class Bot():
 
 # variable
 address = "https://www.google.co.kr"
-# keyword = input("검색어를 입력하세요: ")
 
 # Bot Setting
+app = QApplication(sys.argv)
 Bot = Bot()
 Bot.setAddress(address)
 
-Bot.setKeyword('c언어')
 Bot.setIsDev(True)
 
 # Bot start
-start = timeit.default_timer()
-Bot.bot_start()
-stop = timeit.default_timer()
-print(stop - start)
+# start = timeit.default_timer()
+# Bot.bot_start()
+# stop = timeit.default_timer()
+# print(stop - start)
+
+app.exec_()
+Bot.get_CrawlerBot().quit()
