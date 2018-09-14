@@ -28,7 +28,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__bot = CrawlerBot.Selenium()
         self.__validation = Validation.Validation()
         self.__whiteList = re.compile('ko.wikipedia.org')
-        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live')
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|instagram.com')
         self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp)$');
 
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
