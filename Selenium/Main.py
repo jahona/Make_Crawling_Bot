@@ -159,6 +159,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.btnSearch.clicked.connect(self.btnSearchClickEvent)
         self.btnSearch.setAutoDefault(True)
 
+        # 중지 버튼 이벤트 핸들링
+        self.btnPause.clicked.connect(self.resultToGui)
+
         # 저장 버튼 이벤트 핸들링
         self.btnSave.clicked.connect(self.save_File)
 

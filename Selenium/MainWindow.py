@@ -45,6 +45,9 @@ class Ui_MainWindow():
         self.btnSave = QtWidgets.QPushButton(self.centralwidget)
         self.btnSave.setObjectName(_fromUtf8("btnSave"))
         self.horizontalLayout.addWidget(self.btnSave)
+        self.btnPause = QtWidgets.QPushButton(self.centralwidget)
+        self.btnPause.setObjectName(_fromUtf8("btnPause"))
+        self.horizontalLayout.addWidget(self.btnPause)
         self.verticalLayout.addLayout(self.horizontalLayout)
 
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
@@ -88,6 +91,7 @@ class Ui_MainWindow():
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
         self.btnSearch.setText(_translate("MainWindow", "검색", None))
+        self.btnPause.setText(_translate("MainWindow", "중지", None))
         self.btnSave.setText(_translate("MainWindow", "저장", None))
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "링크", None))
@@ -112,7 +116,7 @@ class ProgressBarThread(QThread):
 
         while True:
             self.mutex.lock()
-            
+
             self.change_value.emit(self.count)
             self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
 
