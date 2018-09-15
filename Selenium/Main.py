@@ -25,41 +25,24 @@ random.seed(datetime.datetime.now())
 
 class Bot(QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
+        # 셀러니움 봇 생성
         self.__bot = CrawlerBot.Selenium()
+
+        # 유사도 검증 클래스
         self.__validation = Validation.Validation()
+
+        # 문서 필터링
         self.__whiteList = re.compile('ko.wikipedia.org')
         self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram')
         self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp|tar|xz|pkg|zip)$');
 
+        # 문장 분리기
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
 
-        # 정상적으로 종료된 링크 저장
-        self.__linkDict = dict()
-        self.__sentenceDict = dict()
-        self.__keywordDict = dict()
-        self.__distanceDict = dict()
-
-        # 에러난 링크/메시지 저장
-        self.__errorLinkDict = dict()
-        self.__errorMessageDict = dict()
-
-        #GUI 추가------------------------------------------------------------
-        QMainWindow.__init__(self)
-        self.setupUi(self)
-
-        # 검색 버튼 이벤트 핸들링
-        self.btnSearch.clicked.connect(self.bot_start)
-        self.btnSearch.setAutoDefault(True)
-        # 저장 버튼 이벤트 핸들링
-        self.btnSave.clicked.connect(self.save_File)
-
-        self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
-
-        # 메인윈도우 보이기
-        self.show()
-        #GUI 추가------------------------------------------------------------
-
+        # GUI 셋팅
+        self.guiInit()
         pass
+
     def get_CrawlerBot(self):
         return self.__bot
 
@@ -117,7 +100,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         file.close()
 
-    def GUI_SET(self):
+    def resultToGui(self):
         self.tableWidget.setRowCount(0)
         row = 0
         distanceDict = self.__distanceDict
@@ -151,7 +134,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         if item.column() == 0:
             webbrowser.open(self.tableWidget.item(item.row(), item.column()).text())
 
-    def bot_start(self):
+    def init(self):
         # 정상적으로 종료된 링크 저장
         self.__linkDict = dict()
         self.__sentenceDict = dict()
@@ -162,14 +145,44 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__errorLinkDict = dict()
         self.__errorMessageDict = dict()
 
-        start = timeit.default_timer()
+    def guiInit(self):
+        #GUI 추가
+        QMainWindow.__init__(self)
+        self.setupUi(self)
 
-        #keyword를 GUI에서 입력받고 setting한다.
+        # 검색 버튼 이벤트 핸들링
+        self.btnSearch.clicked.connect(self.btnSearchClickEvent)
+        self.btnSearch.setAutoDefault(True)
+
+        # 저장 버튼 이벤트 핸들링
+        self.btnSave.clicked.connect(self.save_File)
+
+        self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
+
+        # 메인윈도우 보이기
+        self.show()
+
+    def btnSearchClickEvent(self):
         keyword = self.lineEdit.text()
-        Bot.setKeyword(keyword)
+
+        self.setKeyword(keyword)
+
+        start = timeit.default_timer()
+        self.botStart()
+        stop = timeit.default_timer()
+
+        runningTime = stop - start
+
+        print(runningTime)
+
+    def botStart(self):
+        # dic() clean
+        self.init()
 
         # Google 에 해당 키워드 검색 후 화면 이동
         self.__bot.search_keyword_based_on_google(self.__keyword)
+
+        self.__keyword = self.__keyword.replace(" ", "")
 
         # Return Google Search List
         googleLinks = self.__bot.get_google_links()
@@ -179,11 +192,10 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
-            if index==1:
-                break
             if self.linkFilter(link):
                 del googleLinks[index]
                 continue
+
             try:
                 # 해당 페이지의 page source get
                 self.__bot.go_page(link)
@@ -255,13 +267,13 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 print('문서 요약 에러')
                 continue
 
-            self.printCommand(index+1, link, summarizes, keywords)
+            self.printCommand(index, link, summarizes, keywords)
 
             self.__linkDict[index] = link
             self.__sentenceDict[index] = summarizes
             self.__keywordDict[index] = keywords
 
-        # 전체 백터라이징
+        # 비교 기준이 되는 문서들의 벡터 구하기
         self.__validation.base_vectorizing()
 
         # 외부, 내부 링크들에 대해 TR 수행
@@ -269,20 +281,18 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         print("전체 링크수 : ", len(allLinks))
 
-        self.__keyword = self.__keyword.replace(" ", "")
-
         # 외부/내부 링크 탐색 시작
         self.travelLink(allLinks, len(googleLinks))
 
-        stop = timeit.default_timer()
-        print(stop - start)
         pass
 
     def travelLink(self, links, baselength):
         for (index, link) in enumerate(links):
             Dictindex = index + baselength
+
             # 프로그레스바 값 설정
-            self.get_progressbar_thread.setValue(int((index+baselength)/(len(links)+len(baselength))*100))
+            # self.get_progressbar_thread.setValue(int((index+baselength)/(len(links)+len(baselength))*100))
+
             #페이지 이동
             try:
                 self.__bot.go_page(link)
@@ -326,7 +336,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 print('vectorizer 에러')
                 continue
 
-
             # 유클리드 거리 구하기
             try:
                 # base와 target간에 유클리드 거리 구하기
@@ -349,7 +358,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 print('유클리드 거리 구하기 에러')
                 continue
 
-            self.printCommand(Dictindex+1, link, summarizes, keywords, distance)
+            self.printCommand(Dictindex, link, summarizes, keywords, distance)
 
             self.__linkDict[Dictindex] = link
             self.__sentenceDict[Dictindex] = summarizes
@@ -357,16 +366,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         self.__distanceDict = self.__validation.get_dic()
 
-        self.GUI_SET()
+        self.resultToGui()
 
         pass
-
-    def getIntersection(self, keywords):
-        intersection = baseKeywordsSet & set(keywords)
-        if(len(intersection) >= 2):
-            return True
-        else:
-            return False
 
     def linkFilter(self, link):
         stlink = str(link)
@@ -407,18 +409,16 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 # variable
 address = "https://www.google.co.kr"
 
-# Bot Setting
 app = QApplication(sys.argv)
+
+# Bot Setting
 Bot = Bot()
 Bot.setAddress(address)
-
-Bot.setIsDev(True)
+app.exec_()
+Bot.get_CrawlerBot().quit()
 
 # Bot start
 # start = timeit.default_timer()
 # Bot.bot_start()
 # stop = timeit.default_timer()
 # print(stop - start)
-
-app.exec_()
-Bot.get_CrawlerBot().quit()
