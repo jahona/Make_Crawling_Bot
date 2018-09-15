@@ -8,7 +8,7 @@
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import *
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -46,13 +46,15 @@ class Ui_MainWindow():
         self.btnSave.setObjectName(_fromUtf8("btnSave"))
         self.horizontalLayout.addWidget(self.btnSave)
         self.verticalLayout.addLayout(self.horizontalLayout)
+
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setProperty("value", 0)
         self.progressBar.setObjectName(_fromUtf8("progressBar"))
-
-        self.get_progressbar_thread = ProgressBarThread(self.progressBar)
+        self.get_progressbar_thread = ProgressBarThread()
+        self.get_progressbar_thread.change_value.connect(self.progressBar.setValue)
 
         self.verticalLayout.addWidget(self.progressBar)
+
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -83,8 +85,6 @@ class Ui_MainWindow():
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-        # self.get_progressbar_thread.start()
-
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
         self.btnSearch.setText(_translate("MainWindow", "검색", None))
@@ -95,9 +95,13 @@ class Ui_MainWindow():
         item.setText(_translate("MainWindow", "내용", None))
 
 class ProgressBarThread(QThread):
-    def __init__(self, progressBar):
+    change_value = pyqtSignal(int)
+
+    def __init__(self):
         QThread.__init__(self)
-        self.progressBar = progressBar
+        self.cond = QWaitCondition()
+        self.mutex = QMutex()
+
         self.count = 0
 
     def __del__(self):
@@ -106,10 +110,13 @@ class ProgressBarThread(QThread):
     def run(self):
         count = 0
 
-        while(True):
-            self.progressBar.setProperty("value", self.count)
-            if(self.count == 100):
-                break
+        while True:
+            self.mutex.lock()
+            
+            self.change_value.emit(self.count)
+            self.msleep(100)  # ※주의 QThread에서 제공하는 sleep을 사용
+
+            self.mutex.unlock()
 
     def setValue(self, value):
         self.count = value

@@ -14,10 +14,14 @@ import re
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+
 import MainWindow
 import pickle
 
 import webbrowser
+
+import threading
 
 # logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -41,6 +45,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         # GUI 셋팅
         self.guiInit()
+
         pass
 
     def get_CrawlerBot(self):
@@ -162,13 +167,17 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         # 메인윈도우 보이기
         self.show()
 
+        # progress bar thread start
+        self.get_progressbar_thread.start()
+
     def btnSearchClickEvent(self):
         keyword = self.lineEdit.text()
 
         self.setKeyword(keyword)
 
         start = timeit.default_timer()
-        self.botStart()
+        t = threading.Thread(target=self.botStart)
+        t.start()
         stop = timeit.default_timer()
 
         runningTime = stop - start
@@ -192,6 +201,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
+            if(index==1):
+                break
+
             if self.linkFilter(link):
                 del googleLinks[index]
                 continue
@@ -291,7 +303,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             Dictindex = index + baselength
 
             # 프로그레스바 값 설정
-            # self.get_progressbar_thread.setValue(int((index+baselength)/(len(links)+len(baselength))*100))
+            # self.get_progressbar_thread.setValue(int((Dictindex)/(len(links)+baselength)*100))
+            self.get_progressbar_thread.setValue(int((Dictindex)/100*100))
+            print(int((Dictindex)/100*100))
 
             #페이지 이동
             try:
