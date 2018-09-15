@@ -160,7 +160,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.btnSearch.setAutoDefault(True)
 
         # 중지 버튼 이벤트 핸들링
-        self.btnPause.clicked.connect(self.resultToGui)
+        self.btnPause.clicked.connect(self.stop_thread)
 
         # 저장 버튼 이벤트 핸들링
         self.btnSave.clicked.connect(self.save_File)
@@ -179,8 +179,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.setKeyword(keyword)
 
         start = timeit.default_timer()
-        t = threading.Thread(target=self.botStart)
-        t.start()
+        self.__t = threading.Thread(target=self.botStart)
+        self.__threadStopFlag = False
+        self.__t.start()
         stop = timeit.default_timer()
 
         runningTime = stop - start
@@ -303,7 +304,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
     def travelLink(self, links, baselength):
         for (index, link) in enumerate(links):
-            if index == 0:
+            if(self.stop_thread_check()):
                 break
             Dictindex = index + baselength
 
@@ -424,6 +425,16 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         print('----------------------------------')
         pass
+
+    def stop_thread(self):
+        self.__threadStopFlag = True
+        self.__t.join()
+
+    def stop_thread_check(self):
+        if(self.__threadStopFlag == True):
+            return True
+
+        return False
 
 # variable
 address = "https://www.google.co.kr"
