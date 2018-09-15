@@ -12,8 +12,9 @@ import time
 import math
 import re
 
-from PyQt4.QtGui import *
-from PyQt4 import QtGui
+from PyQt5.QtGui import *
+from PyQt5 import QtCore, QtGui, QtWidgets
+
 import MainWindow
 import pickle
 
@@ -45,18 +46,18 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         #GUI 추가------------------------------------------------------------
         QMainWindow.__init__(self)
-        self.setupUi(self)
-
-        # 검색 버튼 이벤트 핸들링
-        self.btnSearch.clicked.connect(self.bot_start)
-        self.btnSearch.setAutoDefault(True)
-        # 저장 버튼 이벤트 핸들링
-        self.btnSave.clicked.connect(self.save_File)
-
-        self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
-
-        # 메인윈도우 보이기
-        self.show()
+        # self.setupUi(self)
+        #
+        # # 검색 버튼 이벤트 핸들링
+        # self.btnSearch.clicked.connect(self.bot_start)
+        # self.btnSearch.setAutoDefault(True)
+        # # 저장 버튼 이벤트 핸들링
+        # self.btnSave.clicked.connect(self.save_File)
+        #
+        # self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
+        #
+        # # 메인윈도우 보이기
+        # self.show()
         #GUI 추가------------------------------------------------------------
 
         pass
@@ -165,8 +166,8 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         start = timeit.default_timer()
 
         #keyword를 GUI에서 입력받고 setting한다.
-        keyword = self.lineEdit.text()
-        Bot.setKeyword(keyword)
+        # keyword = self.lineEdit.text()
+        # Bot.setKeyword(keyword)
 
         # Google 에 해당 키워드 검색 후 화면 이동
         self.__bot.search_keyword_based_on_google(self.__keyword)
@@ -211,7 +212,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                         continue
                     internalLinks.append(internalLink)
 
-                # TODO: url 탐색 후 쿠키, 세션 삭제
             except Exception as e:
                 self.__errorLinkDict[index] = link
                 self.__errorMessageDict[index] = e
@@ -274,18 +274,25 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         # 외부/내부 링크 탐색 시작
         self.travelLink(allLinks, len(googleLinks))
 
+        # 저장
+        self.save_File()
+
         stop = timeit.default_timer()
         print(stop - start)
         pass
 
     def travelLink(self, links, baselength):
         for (index, link) in enumerate(links):
+            if(index > 10):
+                break
+
             Dictindex = index + baselength
             #프로그레스바 값 설정
             # self.get_progressbar_thread.setValue(int(index/8*100))
             # if index == 5:
             #     break
             #페이지 이동
+
             try:
                 self.__bot.go_page(link)
                 pageSource = self.__bot.get_page_source()
@@ -356,8 +363,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         self.__distanceDict = self.__validation.get_dic()
 
-        self.GUI_SET()
-
+        # self.GUI_SET()
         pass
 
     def getIntersection(self, keywords):
@@ -407,17 +413,19 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 address = "https://www.google.co.kr"
 
 # Bot Setting
+keyword = '커피'
+
 app = QApplication(sys.argv)
+
 Bot = Bot()
 Bot.setAddress(address)
-
+Bot.setKeyword(keyword)
 Bot.setIsDev(True)
 
 # Bot start
 # start = timeit.default_timer()
-# Bot.bot_start()
+Bot.bot_start()
 # stop = timeit.default_timer()
 # print(stop - start)
 
 app.exec_()
-Bot.get_CrawlerBot().quit()
