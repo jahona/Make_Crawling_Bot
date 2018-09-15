@@ -12,8 +12,8 @@ import time
 import math
 import re
 
-from PyQt4.QtGui import *
-from PyQt4 import QtGui
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import *
 import MainWindow
 import pickle
 

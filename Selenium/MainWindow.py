@@ -6,8 +6,9 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import QThread
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QThread
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -16,44 +17,44 @@ except AttributeError:
         return s
 
 try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
+    _encoding = QtWidgets.QApplication.UnicodeUTF8
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+        return QtWidgets.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+        return QtWidgets.QApplication.translate(context, text, disambig)
 
 class Ui_MainWindow():
     def setupUi(self, MainWindow):
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(782, 542)
-        self.centralwidget = QtGui.QWidget(MainWindow)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
-        self.verticalLayout = QtGui.QVBoxLayout(self.centralwidget)
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.horizontalLayout = QtGui.QHBoxLayout()
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
-        self.lineEdit = QtGui.QLineEdit(self.centralwidget)
+        self.lineEdit = QtWidgets.QLineEdit(self.centralwidget)
         self.lineEdit.setMinimumSize(QtCore.QSize(0, 30))
         self.lineEdit.setObjectName(_fromUtf8("lineEdit"))
         self.horizontalLayout.addWidget(self.lineEdit)
-        self.btnSearch = QtGui.QPushButton(self.centralwidget)
+        self.btnSearch = QtWidgets.QPushButton(self.centralwidget)
         self.btnSearch.setMinimumSize(QtCore.QSize(0, 30))
         self.btnSearch.setObjectName(_fromUtf8("btnSearch"))
         self.horizontalLayout.addWidget(self.btnSearch)
-        self.btnSave = QtGui.QPushButton(self.centralwidget)
+        self.btnSave = QtWidgets.QPushButton(self.centralwidget)
         self.btnSave.setObjectName(_fromUtf8("btnSave"))
         self.horizontalLayout.addWidget(self.btnSave)
         self.verticalLayout.addLayout(self.horizontalLayout)
-        self.progressBar = QtGui.QProgressBar(self.centralwidget)
+        self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setProperty("value", 0)
         self.progressBar.setObjectName(_fromUtf8("progressBar"))
 
         self.get_progressbar_thread = ProgressBarThread(self.progressBar)
 
         self.verticalLayout.addWidget(self.progressBar)
-        self.tableWidget = QtGui.QTableWidget(self.centralwidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.tableWidget.sizePolicy().hasHeightForWidth())
@@ -65,17 +66,17 @@ class Ui_MainWindow():
         self.tableWidget.setRowCount(0)
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setObjectName(_fromUtf8("tableWidget"))
-        item = QtGui.QTableWidgetItem()
+        item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtGui.QTableWidgetItem()
+        item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(1, item)
         self.verticalLayout.addWidget(self.tableWidget)
         MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtGui.QMenuBar(MainWindow)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 782, 26))
         self.menubar.setObjectName(_fromUtf8("menubar"))
         MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtGui.QStatusBar(MainWindow)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
         MainWindow.setStatusBar(self.statusbar)
 
