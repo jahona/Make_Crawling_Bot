@@ -128,7 +128,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             contents += "keyword\n" + str(self.__keywordDict[i])
 
             self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
-            self.tableWidget.item(row, 0).setTextColor(QtGui.QColor(0, 0, 255))
+            self.tableWidget.item(row, 0).setForeground(Qt.blue)
             self.tableWidget.setItem(row, 1, QTableWidgetItem(contents))
             row += 1
 
@@ -303,6 +303,8 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
     def travelLink(self, links, baselength):
         for (index, link) in enumerate(links):
+            if index == 0:
+                break
             Dictindex = index + baselength
 
             # 프로그레스바 값 설정
