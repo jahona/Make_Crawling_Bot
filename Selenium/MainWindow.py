@@ -45,13 +45,13 @@ class Ui_MainWindow():
         self.btnSave.setObjectName(_fromUtf8("btnSave"))
         self.horizontalLayout.addWidget(self.btnSave)
         self.verticalLayout.addLayout(self.horizontalLayout)
-        # self.progressBar = QtGui.QProgressBar(self.centralwidget)
-        # self.progressBar.setProperty("value", 0)
-        # self.progressBar.setObjectName(_fromUtf8("progressBar"))
+        self.progressBar = QtGui.QProgressBar(self.centralwidget)
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setObjectName(_fromUtf8("progressBar"))
 
-        # self.get_progressbar_thread = ProgressBarThread(self.progressBar)
-        #
-        # self.verticalLayout.addWidget(self.progressBar)
+        self.get_progressbar_thread = ProgressBarThread(self.progressBar)
+
+        self.verticalLayout.addWidget(self.progressBar)
         self.tableWidget = QtGui.QTableWidget(self.centralwidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -93,22 +93,22 @@ class Ui_MainWindow():
         item = self.tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "내용", None))
 
-# class ProgressBarThread(QThread):
-#     def __init__(self, progressBar):
-#         QThread.__init__(self)
-#         self.progressBar = progressBar
-#         self.count = 0
-#
-#     def __del__(self):
-#         self.wait()
-#
-#     def run(self):
-#         count = 0
-#
-#         while(True):
-#             self.progressBar.setProperty("value", self.count)
-#             if(self.count == 100):
-#                 break
-#
-#     def setValue(self, value):
-#         self.count = value
+class ProgressBarThread(QThread):
+    def __init__(self, progressBar):
+        QThread.__init__(self)
+        self.progressBar = progressBar
+        self.count = 0
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        count = 0
+
+        while(True):
+            self.progressBar.setProperty("value", self.count)
+            if(self.count == 100):
+                break
+
+    def setValue(self, value):
+        self.count = value

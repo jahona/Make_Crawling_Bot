@@ -179,6 +179,8 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
+            if index==1:
+                break
             if self.linkFilter(link):
                 del googleLinks[index]
                 continue
@@ -233,6 +235,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                         break
 
                 if(flag == False):
+                    print('검색어가 키워드에 없습니다.')
                     continue
 
                 for sentence in summarizes:
@@ -278,8 +281,8 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
     def travelLink(self, links, baselength):
         for (index, link) in enumerate(links):
             Dictindex = index + baselength
-            #프로그레스바 값 설정
-            # self.get_progressbar_thread.setValue(int(index/8*100))
+            # 프로그레스바 값 설정
+            self.get_progressbar_thread.setValue(int((index+baselength)/(len(links)+len(baselength))*100))
             #페이지 이동
             try:
                 self.__bot.go_page(link)
@@ -296,6 +299,17 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 textrank = TextRank.TextRank(pageSource)
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
+
+                # 타겟 링크 문서의 키워드에 __keyword가 포함되어 있지 않다면 예외처리
+                flag = False
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = True
+                        break
+
+                if(flag == False):
+                    print('검색어가 키워드에 없습니다.')
+                    continue
             except Exception as e:
                 self.__errorLinkDict[Dictindex] = link
                 self.__errorMessageDict[Dictindex] = e
@@ -312,15 +326,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 print('vectorizer 에러')
                 continue
 
-            flag = False
-            for keyword in keywords:
-                if keyword in self.__keyword:
-                    flag = True
-                    break
-
-            if(flag == False):
-                print('검색어가 키워드에 없습니다.')
-                continue
 
             # 유클리드 거리 구하기
             try:
