@@ -13,7 +13,8 @@ import math
 import re
 
 from PyQt5.QtGui import *
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import *
 
 import MainWindow
 import pickle
@@ -46,18 +47,18 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         #GUI 추가------------------------------------------------------------
         QMainWindow.__init__(self)
-        # self.setupUi(self)
+        self.setupUi(self)
         #
         # # 검색 버튼 이벤트 핸들링
-        # self.btnSearch.clicked.connect(self.bot_start)
-        # self.btnSearch.setAutoDefault(True)
+        self.btnSearch.clicked.connect(self.bot_start)
+        self.btnSearch.setAutoDefault(True)
         # # 저장 버튼 이벤트 핸들링
-        # self.btnSave.clicked.connect(self.save_File)
+        self.btnSave.clicked.connect(self.save_File)
         #
-        # self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
+        self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
         #
         # # 메인윈도우 보이기
-        # self.show()
+        self.show()
         #GUI 추가------------------------------------------------------------
 
         pass
