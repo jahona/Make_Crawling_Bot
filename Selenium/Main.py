@@ -216,6 +216,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
+            if(self.stop_thread_check()):
+                break
+                
             if(index==1):
                 break
 
