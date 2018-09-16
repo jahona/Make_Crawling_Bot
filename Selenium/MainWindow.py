@@ -158,7 +158,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        MainWindow.setWindowTitle(_translate("Simple Search Crawler", "Simple Search Crawler", None))
         self.label.setText(_translate("MainWindow", "검색어", None))
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "링크", None))

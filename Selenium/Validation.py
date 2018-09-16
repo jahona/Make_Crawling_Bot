@@ -23,6 +23,9 @@ class Validation():
     def init_dic(self):
         self.__dic = dict()
 
+    def init_base_normalized(self):
+        self.__base_normalized = None
+
     ## get
     def get_vectorizer(self):
         return self.__vectorizer

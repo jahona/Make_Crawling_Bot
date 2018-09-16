@@ -139,10 +139,13 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                         contents += str(sentence) + "\n"
 
             contents += "\n"
-            contents += "keyword\n" + str(self.__keywordDict[i])
+            contents += "keyword\n"
 
             for k, keyword in enumerate(self.__keywordDict[i]):
-                contents += keyword + " "
+                if k+1 == len(self.__keywordDict[i]):
+                    contents += keyword
+                else:
+                    contents += keyword + ", "
 
             self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
             self.tableWidget.item(row, 0).setForeground(Qt.blue)
@@ -163,6 +166,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__keywordDict = dict()
         self.__distanceDict = dict()
         self.__validation.init_dic()
+        self.__validation.init_base_normalized()
 
         # 에러난 링크/메시지 저장
         self.__errorLinkDict = dict()
@@ -297,6 +301,10 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             self.__linkDict[index] = link
             self.__sentenceDict[index] = summarizes
             self.__keywordDict[index] = keywords
+
+            self.__distanceDict = self.__validation.get_dic()
+
+            self.resultToGui()
 
         # 비교 기준이 되는 문서들의 벡터 구하기
         self.__validation.base_vectorizing()
