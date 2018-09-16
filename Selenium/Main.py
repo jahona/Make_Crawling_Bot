@@ -27,6 +27,20 @@ import threading
 logger = logging.getLogger()
 random.seed(datetime.datetime.now())
 
+class Timer():
+    def __self__(self):
+        self.__start = None
+        self.__end = None
+
+    def start(self):
+        self.__start = timeit.default_timer()
+
+    def end(self):
+        self.__end = timeit.default_timer()
+
+    def getTime(self):
+        return self.__end - self.__start
+
 class Bot(QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
         # 셀러니움 봇 생성
@@ -178,18 +192,15 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         self.setKeyword(keyword)
 
-        start = timeit.default_timer()
         self.__t = threading.Thread(target=self.botStart)
         self.__threadStopFlag = False
         self.__t.start()
-        stop = timeit.default_timer()
-
-        runningTime = stop - start
-
-        print(runningTime)
 
     def botStart(self):
         # dic() clean
+        t = Timer()
+        t.start()
+
         self.init()
 
         # Google 에 해당 키워드 검색 후 화면 이동
@@ -300,6 +311,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         # 외부/내부 링크 탐색 시작
         self.travelLink(allLinks, len(googleLinks))
 
+        t.end()
+
+        print('running time: ', t.getTime())
         pass
 
     def travelLink(self, links, baselength):
