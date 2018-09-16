@@ -193,6 +193,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.setKeyword(keyword)
 
         self.__t = threading.Thread(target=self.botStart)
+        self.get_progressbar_thread.setValue(0)
         self.__threadStopFlag = False
         self.__t.start()
 

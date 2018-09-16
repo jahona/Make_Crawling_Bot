@@ -51,7 +51,7 @@ class Ui_MainWindow():
         self.verticalLayout.addLayout(self.horizontalLayout)
 
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
-        self.progressBar.setProperty("value", 0)
+        self.progressBar.setValue(0)
         self.progressBar.setObjectName(_fromUtf8("progressBar"))
         self.get_progressbar_thread = ProgressBarThread()
         self.get_progressbar_thread.change_value.connect(self.progressBar.setValue)
