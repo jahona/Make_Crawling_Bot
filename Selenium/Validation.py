@@ -19,14 +19,16 @@ class Validation():
 
         self.__str = ""
 
+    ## init
+    def init_dic(self):
+        self.__dic = dict()
+
     ## get
     def get_vectorizer(self):
         return self.__vectorizer
 
     def get_dic(self):
-        dic = self.__dic
-        self.__dic = dict()
-        return dic
+        return self.__dic
 
     def get_base_sentences(self):
         return self.__baseSentences

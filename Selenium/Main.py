@@ -51,7 +51,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         # 문서 필터링
         self.__whiteList = re.compile('ko.wikipedia.org')
-        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram')
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram|imgurl')
         self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp|tar|xz|pkg|zip)$');
 
         # 문장 분리기
@@ -141,6 +141,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             contents += "\n"
             contents += "keyword\n" + str(self.__keywordDict[i])
 
+            for k, keyword in enumerate(self.__keywordDict[i]):
+                contents += keyword + " "
+
             self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
             self.tableWidget.item(row, 0).setForeground(Qt.blue)
             self.tableWidget.setItem(row, 1, QTableWidgetItem(contents))
@@ -159,6 +162,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__sentenceDict = dict()
         self.__keywordDict = dict()
         self.__distanceDict = dict()
+        self.__validation.init_dic()
 
         # 에러난 링크/메시지 저장
         self.__errorLinkDict = dict()
@@ -174,7 +178,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.btnSearch.setAutoDefault(True)
 
         # 중지 버튼 이벤트 핸들링
-        self.btnPause.clicked.connect(self.stop_thread)
+        self.btnStop.clicked.connect(self.stop_thread)
 
         # 저장 버튼 이벤트 핸들링
         self.btnSave.clicked.connect(self.save_File)
@@ -218,9 +222,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         # googleLinks에 있는 link들을 탐색
         for index, link in enumerate(googleLinks):
             if(self.stop_thread_check()):
-                break
-                
-            if(index==1):
                 break
 
             if self.linkFilter(link):
@@ -327,9 +328,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             Dictindex = index + baselength
 
             # 프로그레스바 값 설정
-            # self.get_progressbar_thread.setValue(int((Dictindex)/(len(links)+baselength)*100))
-            self.get_progressbar_thread.setValue(int((Dictindex)/100*100))
-            print(int((Dictindex)/100*100))
+            self.get_progressbar_thread.setValue(int((Dictindex+1)/(len(links)+baselength)*100))
 
             #페이지 이동
             try:
@@ -402,9 +401,9 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             self.__sentenceDict[Dictindex] = summarizes
             self.__keywordDict[Dictindex] = keywords
 
-        self.__distanceDict = self.__validation.get_dic()
+            self.__distanceDict = self.__validation.get_dic()
 
-        self.resultToGui()
+            self.resultToGui()
 
         pass
 
