@@ -94,27 +94,14 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             try:
                 row += 1
                 file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
-                file.write("key sentence : ")
+                file.write("key sentence\n")
                 for j, sentence in enumerate(self.__sentenceDict[i]):
                     if j<5:
                         file.write(sentence + "\n")
-                file.write("\nkeyword : " + str(self.__keywordDict[i]) + "\n\n")
-                file.write("distance : " + str(distance) + "\n\n")
+                file.write("\nkeyword\n" + str(self.__keywordDict[i]) + "\n")
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
             except:
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
-                pass
-
-        errorFile = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + "_error.txt", "w", encoding='UTF-8')
-        errorFile.write("------------------------------------------------------------------------------------------------------------------------\n")
-
-        for i, link in self.__errorLinkDict.items():
-            try:
-                errorFile.write("link " + str(i) + ":" + link + "\n\n")
-                errorFile.write("error message : " + str(self.__errorMessageDict[i]) + "\n\n")
-                errorFile.write("------------------------------------------------------------------------------------------------------------------------\n")
-            except:
-                errorFile.write("------------------------------------------------------------------------------------------------------------------------\n")
                 pass
 
         file.close()
@@ -167,10 +154,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__distanceDict = dict()
         self.__validation.init_dic()
         self.__validation.init_base_normalized()
-
-        # 에러난 링크/메시지 저장
-        self.__errorLinkDict = dict()
-        self.__errorMessageDict = dict()
 
     def guiInit(self):
         #GUI 추가
@@ -239,8 +222,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 pageSource = self.__bot.get_page_source()
                 bsObj = self.__bot.get_bs_obj(pageSource)
             except Exception as e:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = e
                 print(e)
                 print('셀러니움 에러')
                 continue
@@ -263,8 +244,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
                 # TODO: url 탐색 후 쿠키, 세션 삭제
             except Exception as e:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = e
                 print(e)
                 print('외부/내부 링크 흭득 에러')
                 continue
@@ -290,8 +269,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
                 self.__validation.set_dic(index, 0)
             except Exception as e:
-                self.__errorLinkDict[index] = link
-                self.__errorMessageDict[index] = e
                 print(e)
                 print('문서 요약 에러')
                 continue
@@ -336,8 +313,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 self.__bot.go_page(link)
                 pageSource = self.__bot.get_page_source()
             except Exception as e:
-                self.__errorLinkDict[Dictindex] = link
-                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('셀러니움 에러')
                 continue
@@ -351,8 +326,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 if(self.keywordFilter(keywords) == True):
                     continue
             except Exception as e:
-                self.__errorLinkDict[Dictindex] = link
-                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('TextRank 에러')
                 continue
@@ -360,8 +333,6 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             try:
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
             except Exception as e:
-                self.__errorLinkDict[Dictindex] = link
-                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('vectorizer 에러')
                 continue
@@ -376,15 +347,10 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
                 self.__validation.set_dic(Dictindex, distance)
             except ValueError as e:
-                self.__errorLinkDict[Dictindex] = link
-                self.__errorMessageDict[Dictindex] = e
                 print(e)
                 print('distance가 nan입니다')
                 continue
             except:
-                self.__errorLinkDict[Dictindex] = link
-                self.__errorMessageDict[Dictindex] = '유클리드 거리 구하기 에러'
-
                 print('유클리드 거리 구하기 에러')
                 continue
 
