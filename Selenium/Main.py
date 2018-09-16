@@ -53,7 +53,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.__whiteList = re.compile('ko.wikipedia.org')
         self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram')
         self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp|tar|xz|pkg|zip)$');
-
+        self.__blackKeywordList = ['로그인']
         # 문장 분리기
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
 
@@ -219,7 +219,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         for index, link in enumerate(googleLinks):
             if(self.stop_thread_check()):
                 break
-                
+
             if(index==1):
                 break
 
@@ -271,14 +271,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 keywords = textrank.keywords()
 
                 # 구글 링크 문서의 키워드에 __keyword가 포함되어 있지 않다면 예외처리
-                flag = False
-                for keyword in keywords:
-                    if keyword in self.__keyword:
-                        flag = True
-                        break
-
-                if(flag == False):
-                    print('검색어가 키워드에 없습니다.')
+                if(self.keywordFilter(keywords) == True):
                     continue
 
                 for sentence in summarizes:
@@ -348,15 +341,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
 
-                # 타겟 링크 문서의 키워드에 __keyword가 포함되어 있지 않다면 예외처리
-                flag = False
-                for keyword in keywords:
-                    if keyword in self.__keyword:
-                        flag = True
-                        break
-
-                if(flag == False):
-                    print('검색어가 키워드에 없습니다.')
+                if(self.keywordFilter(keywords) == True):
                     continue
             except Exception as e:
                 self.__errorLinkDict[Dictindex] = link
@@ -407,6 +392,22 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.resultToGui()
 
         pass
+
+    def keywordFilter(self, keywords):
+        flag = False
+        for keyword in keywords:
+            if keyword in self.__blackKeywordList:
+                return True
+
+            if keyword in self.__keyword:
+                flag = True
+                break
+
+        if(flag == False):
+            print('검색어가 키워드에 없습니다.')
+            return True
+
+        return False
 
     def linkFilter(self, link):
         stlink = str(link)
