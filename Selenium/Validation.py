@@ -7,9 +7,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Validation():
     def __init__(self):
-        self.__best_dist = sys.maxsize
-        self.__best_doc = None
-        self.__best_i = None
         self.__vectorizer = CountVectorizer()
         self.__dic = dict()
 
@@ -22,16 +19,14 @@ class Validation():
 
         self.__str = ""
 
+    ## init
+    def init_dic(self):
+        self.__dic = dict()
+
+    def init_base_normalized(self):
+        self.__base_normalized = None
+
     ## get
-    def get_best_dist(self):
-        return self.__best_dist
-
-    def get_best_doc(self):
-        return self.__best_doc
-
-    def get_best_i(self):
-        return self.__best_i
-
     def get_vectorizer(self):
         return self.__vectorizer
 
@@ -54,12 +49,6 @@ class Validation():
         return self.__base_normalized
 
     ## set
-    def set_best_dist(self, best_dis):
-        self.__best_dist = best_dis
-
-    def set_best_i(self, best_i):
-        self.__best_i = best_i
-
     def set_dic(self, i, dist):
         self.__dic[i] = dist
 
@@ -82,6 +71,7 @@ class Validation():
     # 기준이 되는 문자열 배열들에 한해 vectorizer
     def base_vectorizing(self):
         self.__post_vec = self.__vectorizer.fit_transform([self.__str])
+        self.__str = ""
 
     # 타겟이 되는 문자열들에 한해 vectorizer
     def target_vectorizing(self, sentences):
