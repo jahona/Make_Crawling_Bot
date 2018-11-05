@@ -94,12 +94,21 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             try:
                 row += 1
                 file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
-                file.write("key sentence\n")
+                file.write("keyword\n")
+                for k, keyword in enumerate(self.__keywordDict[i]):
+                    if k+1 == len(self.__keywordDict[i]):
+                        file.write(str(keyword) + "\n\n")
+                    else:
+                        file.write(str(keyword+', '))
                 for j, sentence in enumerate(self.__sentenceDict[i]):
                     if j<5:
-                        file.write(sentence + "\n")
-                file.write("\nkeyword\n" + str(self.__keywordDict[i]) + "\n")
-                file.write("------------------------------------------------------------------------------------------------------------------------\n")
+                        if len(sentence) > 100:
+                            file.write(str(j+1) + ". ")
+                            for l in range(0, int(len(sentence)/100)+1):
+                                file.write(sentence[l*100:(l+1)*100] + "\n")
+                        else:
+                            file.write(str(j+1) + ". " + sentence + "\n")
+                file.write("\n------------------------------------------------------------------------------------------------------------------------\n")
             except:
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
                 pass
@@ -115,17 +124,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
             contents = ""
-            contents += "key sentence\n"
 
-            for j, sentence in enumerate(self.__sentenceDict[i]):
-                if j<5:
-                    if len(sentence) > 100:
-                        contents += sentence[0:97]
-                        contents += "...\n"
-                    else:
-                        contents += str(sentence) + "\n"
-
-            contents += "\n"
             contents += "keyword\n"
 
             for k, keyword in enumerate(self.__keywordDict[i]):
@@ -133,6 +132,17 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                     contents += keyword
                 else:
                     contents += keyword + ", "
+
+            contents += "\n\n"
+
+            for j, sentence in enumerate(self.__sentenceDict[i]):
+                if j<5:
+                    if len(sentence) > 100:
+                        contents += str(j+1) + ". " + sentence[0:97]
+                        contents += "...\n"
+                    else:
+                        contents += str(j+1) + ". " + str(sentence) + "\n"
+
 
             self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
             self.tableWidget.item(row, 0).setForeground(Qt.blue)
