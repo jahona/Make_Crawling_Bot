@@ -20,6 +20,7 @@ import random
 random.seed(datetime.datetime.now())
 
 from time import sleep
+from enum import Enum
 
 class Timer():
     def __self__(self):
@@ -35,16 +36,24 @@ class Timer():
     def getTime(self):
         return self.__end - self.__start
 
+class Status(Enum):
+        INITIAL = 0 # 초기상태
+        RUNNING = 1 # 동작상태
+        STOPING = 2 # 중지상태
+        REST = 3    # 휴식상태
+
 class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
+        # Bot 상태
+        self.__status = Status.INITIAL
+
         # 셀러니움 봇 생성
         self.__strategy = CrawlingStrategy.CrawlingStrategy()
-        self.__validation = Validation.Validation()
-        self.__validation.init_dic()
-        self.__validation.init_base_normalized()
         self.__keyword = None
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
         
+        self.init()
+
         # GUI 셋팅
         self.guiInit()
         pass
@@ -87,9 +96,11 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         row = 0
         distanceDict = self.__distanceDict
 
+        # TODO: distanceDict만큼 생성하는게 너무 불필요해보임
         self.tableWidget.setRowCount(len(distanceDict))
 
-        for i in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
+        # TODO: 한 행마다 출력문들을 객체화 시켜서 깔끔하게 유지하기
+        for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
             contents = ""
             contents += "key sentence\n"
 
@@ -109,10 +120,11 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                     contents += keyword
                 else:
                     contents += keyword + ", "
+            
 
-            self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(str(self.__linkDict[i])))
-            self.tableWidget.item(row, 0).setForeground(QtWidgets.blue)
-            self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(contents))
+            self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
+            self.tableWidget.item(row, 0).setForeground(Qt.blue)
+            self.tableWidget.setItem(row, 1, QTableWidgetItem(contents))
             row += 1
 
         self.tableWidget.resizeColumnToContents(1)
@@ -134,9 +146,13 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
     def init(self):
         # 정상적으로 종료된 링크 저장
-        
+        self.__linkDict = dict()
         self.__sentenceDict = dict()
+        self.__keywordDict = dict()
         self.__distanceDict = dict()
+        self.__validation = Validation.Validation()
+        self.__validation.init_dic()
+        self.__validation.init_base_normalized()
 
     def setKeyword(self, keyword):
         self.__keyword = keyword
@@ -164,13 +180,24 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             return
 
         googleLinks = self.__strategy.getGoogleLinks()
+
         if(len(googleLinks)==0):
-            self.__strategy.getGoogleBaseLinks(self.__keyword)
-            googleLinks = self.__strategy.getGoogleLinks()
+            try:
+                self.__strategy.getGoogleBaseLinks(self.__keyword)
+                googleLinks = self.__strategy.getGoogleLinks()
+            except:
+                pass
 
         for googleLink in googleLinks:
-            self.__strategy.getInternalLinksFromUrl(googleLink)
-            self.__strategy.getExternalLinksFromUrl(googleLink)
+            try:
+                self.__strategy.getInternalLinksFromUrl(googleLink)
+            except:
+                pass
+            
+            try:
+                self.__strategy.getExternalLinksFromUrl(googleLink)
+            except:
+                pass
 
         internalLinks = self.__strategy.getInternalLinks()
         externalLinks = self.__strategy.getExternalLinks()
@@ -203,7 +230,14 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 continue
 
             self.printCommand(index, googleLink, summarizes, keywords)
+
+            self.__linkDict[index] = googleLink
+            self.__sentenceDict[index] = summarizes
+            self.__keywordDict[index] = keywords
+
             self.__distanceDict = self.__validation.get_dic()
+
+            self.resultToGui()
 
         # 비교 기준이 되는 문서들의 벡터 구하기
         self.__validation.base_vectorizing()
@@ -229,15 +263,27 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
                 if math.isnan(distance) == True:
                     raise ValueError
+
+                self.__validation.set_dic(targetIndex, distance)
             except:
                 print('textrank not working')
                 continue
-                
-            self.__validation.set_dic(targetIndex, distance)
+
             self.printCommand(targetIndex, targetLink, summarizes, keywords, distance)
+
+            self.__linkDict[targetIndex] = targetLink
+            self.__sentenceDict[targetIndex] = summarizes
+            self.__keywordDict[targetIndex] = keywords
+            self.__distanceDict = self.__validation.get_dic()
+        
+            self.resultToGui()
+            
         pass
 
     def save_File(self):
+        if(self.__status == Status.INITIAL):
+            return
+
         now = datetime.datetime.now()
         date = now.strftime('%Y%m%d')
 
