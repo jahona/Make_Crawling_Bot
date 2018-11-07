@@ -40,9 +40,14 @@ class CrawlingStrategy:
         gs = bsObj.findAll("div", class_="g")
 
         for g in gs:
-            href = g.find("a").get('href')
-            self.__googleLinks.append(google + href)
+            a = g.find("a")
+            
+            if a == None:
+                continue
 
+            href = a.get('href')
+            self.__googleLinks.append(google + href)
+            # print(href)
         pass
 
     # 페이지에 발견된 내부 링크를 모두 목록으로 만듭니다.
@@ -74,6 +79,7 @@ class CrawlingStrategy:
         bsObj = BeautifulSoup(html, "html.parser")
 
         excludeUrl = self.splitAddress(url)
+        fullUrl = self.getFullUrl(url)
 
         # /로 시작하는 링크를 모두 찾습니다.
         for link in bsObj.findAll("a", href=re.compile("^(http|www)((?!"+excludeUrl+").)*$")):
@@ -111,7 +117,7 @@ class CrawlingStrategy:
         return fullAddress
 
 # CrawlingStrategy = CrawlingStrategy()
-# CrawlingStrategy.getGoogleBaseLinks('C언어')
+# CrawlingStrategy.getGoogleBaseLinks('커피')
 # CrawlingStrategy.getInternalLinksFromUrl('https://www.google.co.kr/url?q=https://namu.wiki/w/C%25EC%2596%25B8%25EC%2596%25B4&sa=U&ved=0ahUKEwj9qMX33areAhVFwbwKHeiKAEAQFggTMAA&usg=AOvVaw35MOt_h_jTe8RBzmUaFCsU')
 # # # Crawler.getInternalLinksFromUrl('https://namu.wiki/w/C%EC%96%B8%EC%96%B4')
 # CrawlingStrategy.getExternalLinksFromUrl('https://namu.wiki/w/C%EC%96%B8%EC%96%B4')
