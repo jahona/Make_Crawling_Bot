@@ -1,6 +1,6 @@
 from newspaper import Article
 from konlpy.tag import Kkma
-from konlpy.tag import Twitter
+from konlpy.tag import Okt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
@@ -12,10 +12,17 @@ Step1. 문서 타입에 따른 문장 단위로 분리
 class SentenceTokenizer(object):
     def __init__(self):
         self.kkma = Kkma()
-        self.twitter = Twitter()
-        self.stopwords = ['중인' ,'만큼', '마찬가지', '꼬집었', "연합뉴스", "데일리", "동아일보", "중앙일보", "조선일보", "기자"
-,"아", "휴", "아이구", "아이쿠", "아이고", "어", "나", "우리", "저희", "따라", "의해", "을", "를", "에", "의", "가",]
-
+        self.Okt = Okt()
+        self.stopwords = ['처음', '널리', '반드시', '완전', '매일', '보통', '이내', '바깥', '지금', '또한', '현재', '오늘날', '정말', '조금',
+        '거꾸로', '위주', '심지어', '저절로', '와중', '사이', '다른', '하나', '주로', '대부분', '아래', '거나', '첫째', '대한', '우선', '주신',
+        '부분', '한편', '여러', '거의', '자체', '바로', '대해', '만약', '마치', '이하', '모두', '따라서', '아마', '둘째', '그게', '직접', '평소',
+        '보기', '지난', '별로', '번은', '실제', '이후', '때문', '면서', '당시', '반면', '한참', '통해', '마찬가지', '오늘', '항시', '다소', '모든',
+        '매우', '말로', '요즘', '혹시', '다시', '대충', '미리', '그냥', '즉시', '동안', '크게', '부터', '통한', '점점', '한번', '정도', '제대로',
+        '최근', '이번', '서로', '먼저', '헤이', '우리', '이건', '위해', '이상', '로써', '이전', '일부', '사실', '내일', '이제', '오히려',
+        '중인', '만큼', '아', '휴', '아이구', '아이쿠', '아이고', '어', '나', '저희', '따라', '의해', '을', '를', '에', '의', '가', '관련', '여기',
+        '경우', '이기', '로서', '감히', '달리', '저런', '처럼', '각각', '등등', '뒤쪽', '로부터', '대신', '몇몇', '앞서', '낫다', '도록', '간간이',
+        '누구', '살짝', '가장', '최소한', '다만', '비롯', '예외', '대개', '가운데', '하나로', '그대로', '누가', '로서', '억지로', '엄선', '자주',
+        '안녕', '우려', '차근차근', '일일이', '듯이', '대체', '무엇', '도대체']
 
     # url 주소를 받아 기사내용 추출.
     def url2sentences(self, url):
@@ -48,7 +55,7 @@ class SentenceTokenizer(object):
         nouns = []
         for sentence in sentences:
             if sentence is not '':
-                nouns.append(' '.join([noun for noun in self.twitter.nouns(str(sentence))
+                nouns.append(' '.join([noun for noun in self.Okt.nouns(str(sentence))
                 if noun not in self.stopwords and len(noun) > 1]))
 
         return nouns
