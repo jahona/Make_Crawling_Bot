@@ -138,7 +138,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
             for j, sentence in enumerate(self.__sentenceDict[i]):
                 if j<5:
                     if len(sentence) > 100:
-                        contents += str(j+1) + ". " + sentence[0:97]
+                        contents += str(j+1) + ". " + sentence[0:100]
                         contents += "...\n"
                     else:
                         contents += str(j+1) + ". " + str(sentence) + "\n"
@@ -272,8 +272,10 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
                     Basesummarizes.append(sentence)
 
                 for sentence in textrank.sentences:
-                    if self.__keyword in sentence:
-                        Basesummarizes.append(sentence)
+                    for word in sentence.split(" "):
+                        if word in self.__keyword:
+                            Basesummarizes.append(sentence)
+                            break
 
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
 
@@ -306,6 +308,7 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         t.end()
 
+        print("검색어: " + self.__keyword)
         print('running time: ', t.getTime())
         pass
 
