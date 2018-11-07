@@ -44,7 +44,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.__validation.init_base_normalized()
         self.__keyword = None
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
-        
+
         # GUI 셋팅
         self.guiInit()
         pass
@@ -64,6 +64,10 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         # 저장 버튼 이벤트 핸들링
         self.btnSave.clicked.connect(self.save_File)
 
+        # 키워드 검색 버튼 이벤트 핸들링
+        self.btnFind.clicked.connect(self.btnFindClickEvent)
+        self.btnFind.setAutoDefault(True)
+
         self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
 
         # 메인윈도우 보이기
@@ -71,7 +75,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         # progress bar thread start
         self.get_progressbar_thread.start()
-    
+
     def stop_thread(self):
         self.__threadStopFlag = True
         self.__t.join()
@@ -81,7 +85,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             return True
 
         return False
-        
+
     def resultToGui(self):
         self.tableWidget.setRowCount(0)
         row = 0
@@ -96,7 +100,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             for j, sentence in enumerate(self.__sentenceDict[i]):
                 if j<5:
                     if len(sentence) > 100:
-                        contents += sentence[0:97]
+                        contents += sentence[0:100]
                         contents += "...\n"
                     else:
                         contents += str(sentence) + "\n"
@@ -117,11 +121,11 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.tableWidget.resizeColumnToContents(1)
         self.tableWidget.resizeRowsToContents()
-    
+
     def OpenLink(self, item):
         if item.column() == 0:
             webbrowser.open(self.tableWidget.item(item.row(), item.column()).text())
-    
+
     def btnSearchClickEvent(self):
         keyword = self.lineEdit.text()
 
@@ -132,15 +136,18 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.__threadStopFlag = False
         self.__t.start()
 
+    def btnFindClickEvent(self):
+        findkeyword = self.lineEdit_2.text()
+
     def init(self):
         # 정상적으로 종료된 링크 저장
-        
+
         self.__sentenceDict = dict()
         self.__distanceDict = dict()
 
     def setKeyword(self, keyword):
         self.__keyword = keyword
-    
+
     def printCommand(self, index, googleLink, summarizes, keywords, distance=None):
         print('----------------------------------')
 
@@ -174,7 +181,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         internalLinks = self.__strategy.getInternalLinks()
         externalLinks = self.__strategy.getExternalLinks()
-        
+
         googleLinksCount = len(googleLinks)
         targetLinks = internalLinks + externalLinks
         targetLinksCount = len(targetLinks)
@@ -195,6 +202,12 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 for sentence in summarizes:
                     Basesummarizes.append(sentence)
 
+                for sentence in textrank.sentences:
+                    for word in sentence.split(" "):
+                        if word in self.__keyword:
+                            Basesummarizes.append(sentence)
+                            break
+
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
 
                 self.__validation.set_dic(index, 0)
@@ -207,7 +220,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         # 비교 기준이 되는 문서들의 벡터 구하기
         self.__validation.base_vectorizing()
-        
+
         for index, targetLink in enumerate(targetLinks):
             if(self.stop_thread_check()):
                 break
@@ -232,9 +245,10 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             except:
                 print('textrank not working')
                 continue
-                
+
             self.__validation.set_dic(targetIndex, distance)
             self.printCommand(targetIndex, targetLink, summarizes, keywords, distance)
+        print()
         pass
 
     def save_File(self):
@@ -262,7 +276,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 pass
 
         file.close()
-        
+
 app = QApplication(sys.argv)
 Bot = Bot()
 sys.exit(app.exec_())
