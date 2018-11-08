@@ -317,7 +317,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
                 for j, sentence in enumerate(self.__sentenceDict[i]):
                     if j<5:
-`                       if len(sentence) > 100:
+                        if len(sentence) > 100:
                             file.write(str(j+1) + ". ")
                             for l in range(0, int(len(sentence)/100)+1):
                                 file.write(sentece[l*100:(l+1)*100] + "\n")
