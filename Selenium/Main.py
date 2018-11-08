@@ -116,17 +116,18 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             
             contents += "\n\n"
 
-            for j, sentece in enumerate(self.__sentenceDict[i]):
+            for j, sentence in enumerate(self.__sentenceDict[i]):
                 if j<5:
-                    if len(sentece) > 100:
-                        contents += str(j+1) + ". " + sentece[0:100]
+                    if len(sentence) > 100:
+                        contents += str(j+1) + ". " + sentence[0:100]
                         contents += "...\n"
                     else:
                         contents += str(j+1) + ". " + str(sentence) + "\n"
 
-            self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(str(self.__linkDict[i])))
-            self.tableWidget.item(row, 0).setForeground(QtWidgets.blue)
-            self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(contents))
+            self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
+            self.tableWidget.item(row, 0).setForeground(Qt.blue)
+            self.tableWidget.setItem(row, 1, QTableWidgetItem(contents))
+
             row += 1
 
         self.tableWidget.resizeColumnToContents(1)
