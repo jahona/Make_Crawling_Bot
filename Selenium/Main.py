@@ -124,9 +124,9 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                     else:
                         contents += str(j+1) + ". " + str(sentence) + "\n"
 
-            self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
+            self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(str(self.__linkDict[i])))
             self.tableWidget.item(row, 0).setForeground(Qt.blue)
-            self.tableWidget.setItem(row, 1, QTableWidgetItem(contents))
+            self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(contents))
 
             row += 1
 
@@ -321,16 +321,17 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                         if len(sentence) > 100:
                             file.write(str(j+1) + ". ")
                             for l in range(0, int(len(sentence)/100)+1):
-                                file.write(sentece[l*100:(l+1)*100] + "\n")
+                                file.write(sentence[l*100:(l+1)*100] + "\n")
                         else:
-                            file.write(str(j+1) + ". " + sentece + "\n")
+                            file.write(str(j+1) + ". " + sentence + "\n")
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
             except:
                 file.write("------------------------------------------------------------------------------------------------------------------------\n")
                 pass
 
         file.close()
-
-app = QApplication(sys.argv)
-Bot = Bot()
-sys.exit(app.exec_())
+        
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = Bot()
+    sys.exit(app.exec_())
