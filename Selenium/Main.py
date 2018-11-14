@@ -51,7 +51,8 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.__strategy = CrawlingStrategy.CrawlingStrategy()
         self.__keyword = None
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
-        
+        self.__t = Timer()
+
         self.init()
 
         # GUI 셋팅
@@ -113,7 +114,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                     contents += keyword
                 else:
                     contents += keyword + ", "
-            
+
             contents += "\n\n"
 
             for j, sentence in enumerate(self.__sentenceDict[i]):
@@ -146,6 +147,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.get_progressbar_thread.setValue(0)
         self.__threadStopFlag = False
         self.__t.start()
+        self.__start = timeit.default_timer()
 
     def btnFindClickEvent(self):
         findkeyword = self.lineEdit_2.text()
@@ -186,7 +188,6 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             return
 
         googleLinks = self.__strategy.getGoogleLinks()
-
         if(len(googleLinks)==0):
             try:
                 self.__strategy.getGoogleBaseLinks(self.__keyword)
@@ -199,7 +200,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 self.__strategy.getInternalLinksFromUrl(googleLink)
             except:
                 pass
-            
+
             try:
                 self.__strategy.getExternalLinksFromUrl(googleLink)
             except:
@@ -211,7 +212,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         googleLinksCount = len(googleLinks)
         targetLinks = internalLinks + externalLinks
         targetLinksCount = len(targetLinks)
-
+        print(targetLinksCount)
         for index, googleLink in enumerate(googleLinks):
             if(self.stop_thread_check()):
                 break
@@ -234,8 +235,16 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                             Basesummarizes.append(sentence)
                             break
 
-                self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
+                flag = 0
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = 1
+                        continue
+                if flag == 0:
+                    print("검색어가 키워드에 없습니다.")
+                    continue
 
+                self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
                 self.__validation.set_dic(index, 0)
             except:
                 print('textrank not working')
@@ -264,10 +273,19 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             self.get_progressbar_thread.setValue(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
 
             try:
-                sleep(2)
+                sleep(1)
                 textrank = TextRank.TextRank(targetLink)
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
+
+                flag = 0
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = 1
+                        continue
+                if flag == 0:
+                    print("검색어가 키워드에 없습니다.")
+                    continue
 
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
 
@@ -287,9 +305,15 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             self.__sentenceDict[targetIndex] = summarizes
             self.__keywordDict[targetIndex] = keywords
             self.__distanceDict = self.__validation.get_dic()
-        
+
             self.resultToGui()
-            
+
+        self.__end = timeit.default_timer()
+
+        print("검색어: " + self.__keyword)
+        print("running time: " + str(self.__end - self.__start))
+        print(targetLinksCount)
+
         pass
 
     def save_File(self):
@@ -330,7 +354,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 pass
 
         file.close()
-        
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = Bot()
