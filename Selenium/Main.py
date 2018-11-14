@@ -22,6 +22,7 @@ random.seed(datetime.datetime.now())
 from time import sleep
 from enum import Enum
 
+# TODO: 객체 지향 면으로 보았을 때 static method로 정하는게 좋은것인가?
 class Timer():
     def __self__(self):
         self.__start = None
@@ -46,18 +47,26 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
         # Bot 상태
         self.__status = Status.INITIAL
+        self.__isTest = True;
 
         # 셀러니움 봇 생성
         self.__strategy = CrawlingStrategy.CrawlingStrategy()
         self.__keyword = None
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
-        self.__t = Timer()
+        self.__timer = Timer()
 
         self.init()
 
         # GUI 셋팅
         self.guiInit()
         pass
+
+    def setIsTest(self, flag):
+        self.__isTest = flag;
+        pass
+
+    def getIsTest(self, flag):
+        return self.__isTest
 
     def guiInit(self):
         #GUI 추가
@@ -147,7 +156,6 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.get_progressbar_thread.setValue(0)
         self.__threadStopFlag = False
         self.__t.start()
-        self.__start = timeit.default_timer()
 
     def btnFindClickEvent(self):
         findkeyword = self.lineEdit_2.text()
@@ -183,6 +191,8 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         pass
 
     def start(self):
+        self.__timer.start();
+
         if(self.__keyword == None):
             print('Not keyword, So Exit')
             return
@@ -213,6 +223,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         targetLinks = internalLinks + externalLinks
         targetLinksCount = len(targetLinks)
         print(targetLinksCount)
+
         for index, googleLink in enumerate(googleLinks):
             if(self.stop_thread_check()):
                 break
@@ -260,11 +271,15 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
             self.resultToGui()
 
-        # 비교 기준이 되는 문서들의 벡터 구하기
+        # googleLinks 들에 대해 벡터 구하여 앞으로 비교할 벡터의 기준이 되게 하기
         self.__validation.base_vectorizing()
 
         for index, targetLink in enumerate(targetLinks):
             if(self.stop_thread_check()):
+                break
+
+            if(self.getIsTest and index<20):
+                print('index over 20 count for test, so exit')
                 break
 
             targetIndex = index + googleLinksCount
@@ -308,10 +323,10 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
             self.resultToGui()
 
-        self.__end = timeit.default_timer()
+        self.__timer.end();
 
         print("검색어: " + self.__keyword)
-        print("running time: " + str(self.__end - self.__start))
+        print("running time: " + str(self.__timer.getTime()));
         print(targetLinksCount)
 
         pass
@@ -358,4 +373,6 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = Bot()
+    ## !!테스트 용으로 사용할 때는 아래 주석 지우지 말고, 실제 기능으로 테스트해보고 싶을 때 아래 주석 제거해서 사용하셈.
+    # ex.setIsTest(False)
     sys.exit(app.exec_())
