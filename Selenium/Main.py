@@ -98,6 +98,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
     def stop_thread(self):
         self.__threadStopFlag = True
         self.__t.join()
+        self.__status = Status.STOPING
 
     def stop_thread_check(self):
         if(self.__threadStopFlag == True):
@@ -105,19 +106,28 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         return False
 
-    def resultToGui(self):
+    # def items_clear(self):
+    #     self.tableWidget.clear()
+
+    def resultToGui(self, findkeyword=None):
+        # self.items_clear()
+
         self.tableWidget.setRowCount(0)
         row = 0
         distanceDict = self.__distanceDict
 
         # TODO: distanceDict만큼 생성하는게 너무 불필요해보임
         self.tableWidget.setRowCount(len(distanceDict))
-
+            
         # TODO: 한 행마다 출력문들을 객체화 시켜서 깔끔하게 유지하기
         for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
             contents = ""
             contents += "keyword\n"
 
+            if(self.__status == Status.STOPING and findkeyword is not None and findkeyword is not ''):
+                if findkeyword not in self.__keywordDict[i]:
+                    continue
+            
             for k, keyword in enumerate(self.__keywordDict[i]):
                 if k+1 == len(self.__keywordDict[i]):
                     contents += keyword
@@ -158,7 +168,14 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.__t.start()
 
     def btnFindClickEvent(self):
+        if(self.__status != Status.STOPING):
+            print('do not execute find')
+            return False
+
         findkeyword = self.lineEdit_2.text()
+        self.resultToGui(findkeyword)
+
+        print(findkeyword)
 
     def init(self):
         # 정상적으로 종료된 링크 저장
@@ -196,6 +213,8 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         if(self.__keyword == None):
             print('Not keyword, So Exit')
             return
+
+        self.__status = Status.RUNNING
 
         googleLinks = self.__strategy.getGoogleLinks()
         if(len(googleLinks)==0):
@@ -278,7 +297,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             if(self.stop_thread_check()):
                 break
 
-            if(self.getIsTest and index<20):
+            if(self.getIsTest and index>10):
                 print('index over 20 count for test, so exit')
                 break
 
@@ -324,6 +343,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             self.resultToGui()
 
         self.__timer.end();
+        self.__status = Status.STOPING
 
         print("검색어: " + self.__keyword)
         print("running time: " + str(self.__timer.getTime()));
