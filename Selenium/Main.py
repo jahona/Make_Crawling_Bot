@@ -96,9 +96,14 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.get_progressbar_thread.start()
 
     def stop_thread(self):
-        self.__threadStopFlag = True
-        self.__t.join()
-        self.__status = Status.STOPING
+        reply = QMessageBox.question(self, 'STOP', "검색을 중지하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.__threadStopFlag = True
+            self.__t.join()
+            self.__status = Status.STOPING
+        else:
+            return
 
     def stop_thread_check(self):
         if(self.__threadStopFlag == True):
@@ -106,19 +111,18 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         return False
 
-    # def items_clear(self):
-    #     self.tableWidget.clear()
+    def items_clear(self):
+        self.tableWidget.setRowCount(0)
 
     def resultToGui(self, findkeyword=None):
-        # self.items_clear()
+        self.items_clear()
 
-        self.tableWidget.setRowCount(0)
         row = 0
         distanceDict = self.__distanceDict
 
         # TODO: distanceDict만큼 생성하는게 너무 불필요해보임
         self.tableWidget.setRowCount(len(distanceDict))
-            
+
         # TODO: 한 행마다 출력문들을 객체화 시켜서 깔끔하게 유지하기
         for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
             contents = ""
@@ -127,7 +131,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             if(self.__status == Status.STOPING and findkeyword is not None and findkeyword is not ''):
                 if findkeyword not in self.__keywordDict[i]:
                     continue
-            
+
             for k, keyword in enumerate(self.__keywordDict[i]):
                 if k+1 == len(self.__keywordDict[i]):
                     contents += keyword
@@ -150,6 +154,13 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
             row += 1
 
+        print(len(distanceDict))
+        print(row)
+        if len(distanceDict) > row:
+            for ri in range(row, len(distanceDict)):
+                print(ri)
+                self.tableWidget.removeRow(row)
+
         self.tableWidget.resizeColumnToContents(1)
         self.tableWidget.resizeRowsToContents()
 
@@ -162,10 +173,17 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.setKeyword(keyword)
 
-        self.__t = threading.Thread(target=self.start)
-        self.get_progressbar_thread.setValue(0)
-        self.__threadStopFlag = False
-        self.__t.start()
+        reply = QMessageBox.question(self, 'Search', "검색을 시작하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.__t = threading.Thread(target=self.start)
+            self.get_progressbar_thread.setValue(0)
+            self.__threadStopFlag = False
+            self.init()
+            self.items_clear()
+            self.__t.start()
+        else:
+            return
 
     def btnFindClickEvent(self):
         if(self.__status != Status.STOPING):
@@ -173,9 +191,15 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             return False
 
         findkeyword = self.lineEdit_2.text()
-        self.resultToGui(findkeyword)
 
-        print(findkeyword)
+        reply = QMessageBox.question(self, 'Find Keyword', "키워드를 찾으시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.resultToGui(findkeyword)
+
+            print(findkeyword)
+        else:
+            return
 
     def init(self):
         # 정상적으로 종료된 링크 저장
@@ -216,15 +240,11 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.__status = Status.RUNNING
 
+        self.__strategy.getGoogleBaseLinks(self.__keyword)
         googleLinks = self.__strategy.getGoogleLinks()
-        if(len(googleLinks)==0):
-            try:
-                self.__strategy.getGoogleBaseLinks(self.__keyword)
-                googleLinks = self.__strategy.getGoogleLinks()
-            except:
-                pass
 
         for googleLink in googleLinks:
+            print(googleLink + "\n")
             try:
                 self.__strategy.getInternalLinksFromUrl(googleLink)
             except:
@@ -265,9 +285,16 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                             Basesummarizes.append(sentence)
                             break
 
-                if self.__keyword not in keywords:
+                flag = 0
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = 1
+                        continue
+
+                if flag == 0:
                     print("검색어가 키워드에 없습니다.")
-                    continue    
+                    print(self.__keyword)
+                    continue
 
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
                 self.__validation.set_dic(index, 0)
@@ -307,9 +334,15 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
 
-                if self.__keyword not in keywords:
+                flag = 0
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = 1
+                        continue
+
+                if flag == 0:
                     print("검색어가 키워드에 없습니다.")
-                    continue    
+                    continue
 
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
 
@@ -345,40 +378,45 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         if(self.__status == Status.INITIAL):
             return
 
-        now = datetime.datetime.now()
-        date = now.strftime('%Y%m%d')
+        reply = QMessageBox.question(self, 'SAVE', "결과를 저장하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
-        #file open
-        file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + ".txt", "w", encoding='UTF-8')
-        file.write("------------------------------------------------------------------------------------------------------------------------\n")
+        if reply == QMessageBox.Yes:
+            now = datetime.datetime.now()
+            date = now.strftime('%Y%m%d')
 
-        distanceDict = self.__distanceDict
-        row = 0
-        for i in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
-            try:
-                row += 1
-                file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
-                file.write("keywordsn\n")
-                for k, keyword in enumerate(self.__keywordDict[i]):
-                    if k+1 == len(self.__keywordDict[i]):
-                        file.write(str(keyword) + "\n\n")
-                    else:
-                        file.write(str(keyword+', '))
+            #file open
+            file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + ".txt", "w", encoding='UTF-8')
+            file.write("------------------------------------------------------------------------------------------------------------------------\n")
 
-                for j, sentence in enumerate(self.__sentenceDict[i]):
-                    if j<5:
-                        if len(sentence) > 100:
-                            file.write(str(j+1) + ". ")
-                            for l in range(0, int(len(sentence)/100)+1):
-                                file.write(sentence[l*100:(l+1)*100] + "\n")
+            distanceDict = self.__distanceDict
+            row = 0
+            for i in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
+                try:
+                    row += 1
+                    file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
+                    file.write("keywordsn\n")
+                    for k, keyword in enumerate(self.__keywordDict[i]):
+                        if k+1 == len(self.__keywordDict[i]):
+                            file.write(str(keyword) + "\n\n")
                         else:
-                            file.write(str(j+1) + ". " + sentence + "\n")
-                file.write("------------------------------------------------------------------------------------------------------------------------\n")
-            except:
-                file.write("------------------------------------------------------------------------------------------------------------------------\n")
-                pass
+                            file.write(str(keyword+', '))
 
-        file.close()
+                    for j, sentence in enumerate(self.__sentenceDict[i]):
+                        if j<5:
+                            if len(sentence) > 100:
+                                file.write(str(j+1) + ". ")
+                                for l in range(0, int(len(sentence)/100)+1):
+                                    file.write(sentence[l*100:(l+1)*100] + "\n")
+                            else:
+                                file.write(str(j+1) + ". " + sentence + "\n")
+                    file.write("------------------------------------------------------------------------------------------------------------------------\n")
+                except:
+                    file.write("------------------------------------------------------------------------------------------------------------------------\n")
+                    pass
+
+            file.close()
+        else:
+            return
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

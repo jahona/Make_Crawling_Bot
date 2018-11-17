@@ -24,7 +24,7 @@ class CrawlingStrategy:
 
     def getGoogleLinks(self):
         return self.__googleLinks
-    
+
     def getInternalLinks(self):
         return self.__internalLinks
 
@@ -32,6 +32,10 @@ class CrawlingStrategy:
         return self.__externalLinks
 
     def getGoogleBaseLinks(self, keyword):
+        self.__googleLinks = []
+        self.__internalLinks = []
+        self.__externalLinks = []
+
         google = 'https://www.google.co.kr'
         address = google + '/search?q=' + parse.quote(keyword)
         html = self.get_html(address)
@@ -41,13 +45,14 @@ class CrawlingStrategy:
 
         for g in gs:
             a = g.find("a")
-            
+
             if a == None:
                 continue
 
             href = a.get('href')
             self.__googleLinks.append(google + href)
-            # print(href)
+            # print(google + href)
+
         pass
 
     # 페이지에 발견된 내부 링크를 모두 목록으로 만듭니다.
@@ -70,8 +75,8 @@ class CrawlingStrategy:
                     else:
                         self.__internalLinks.append(fullUrl.split("/")[0]+"//"+includeUrl+link.attrs['href'])
 
-        for i in range(0, len(self.__internalLinks)):
-            print(self.__internalLinks[i])
+        # for i in range(0, len(self.__internalLinks)):
+        #     print(self.__internalLinks[i])
 
     # 페이지에서 발견된 외부 링크를 모두 목록으로 만듭니다.
     def getExternalLinksFromUrl(self, url):
@@ -93,8 +98,8 @@ class CrawlingStrategy:
                     else:
                         self.__externalLinks.append(fullUrl.split("/")[0]+"//"+excludeUrl+link.attrs['href'])
 
-        for i in range(0, len(self.__externalLinks)):
-            print(self.__externalLinks[i])
+        # for i in range(0, len(self.__externalLinks)):
+        #     print(self.__externalLinks[i])
 
     def splitAddress(self, fullAddress):
         googleAddress = 'https://www.google.co.kr/url?q='

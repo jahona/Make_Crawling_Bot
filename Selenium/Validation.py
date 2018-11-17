@@ -73,7 +73,7 @@ class Validation():
 
     # 기준이 되는 문자열 배열들에 한해 vectorizer
     def base_vectorizing(self):
-        print(self.__str)
+        # print(self.__str)
         self.__post_vec = self.__vectorizer.fit_transform([self.__str])
         self.__str = ""
 
