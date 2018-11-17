@@ -265,14 +265,9 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                             Basesummarizes.append(sentence)
                             break
 
-                flag = 0
-                for keyword in keywords:
-                    if keyword in self.__keyword:
-                        flag = 1
-                        continue
-                if flag == 0:
+                if self.__keyword not in keywords:
                     print("검색어가 키워드에 없습니다.")
-                    continue
+                    continue    
 
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
                 self.__validation.set_dic(index, 0)
@@ -312,14 +307,9 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
 
-                flag = 0
-                for keyword in keywords:
-                    if keyword in self.__keyword:
-                        flag = 1
-                        continue
-                if flag == 0:
+                if self.__keyword not in keywords:
                     print("검색어가 키워드에 없습니다.")
-                    continue
+                    continue    
 
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
 
