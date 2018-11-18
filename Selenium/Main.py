@@ -96,6 +96,10 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.get_progressbar_thread.start()
 
     def stop_thread(self):
+        if(self.__status != Status.RUNNING):
+            QMessageBox.information(self, 'ALARM', "검색 중 상태가 아닙니다.", QMessageBox.Ok, QMessageBox.Ok)
+            return
+
         reply = QMessageBox.question(self, 'STOP', "검색을 중지하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
@@ -169,6 +173,10 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             webbrowser.open(self.tableWidget.item(item.row(), item.column()).text())
 
     def btnSearchClickEvent(self):
+        if(self.__status == Status.RUNNING):
+            QMessageBox.information(self, 'ALARM', "이미 검색 중입니다.", QMessageBox.Ok, QMessageBox.Ok)
+            return
+
         keyword = self.lineEdit.text()
 
         self.setKeyword(keyword)
@@ -375,7 +383,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         pass
 
     def save_File(self):
-        if(self.__status == Status.INITIAL):
+        if(self.__status != Status.STOPING):
             return
 
         reply = QMessageBox.question(self, 'SAVE', "결과를 저장하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -395,6 +403,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                     row += 1
                     file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
                     file.write("keywordsn\n")
+
                     for k, keyword in enumerate(self.__keywordDict[i]):
                         if k+1 == len(self.__keywordDict[i]):
                             file.write(str(keyword) + "\n\n")
