@@ -302,7 +302,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 for keyword in keywords:
                     if keyword in self.__keyword:
                         flag = 1
-                        continue
+                        break
 
                 if flag == 0:
                     print("검색어가 키워드에 없습니다.")
@@ -351,10 +351,11 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 for keyword in keywords:
                     if keyword in self.__keyword:
                         flag = 1
-                        continue
+                        break
 
                 if flag == 0:
                     print("검색어가 키워드에 없습니다.")
+                    print(self.__keyword)
                     continue
 
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
