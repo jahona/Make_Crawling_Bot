@@ -243,6 +243,13 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         print('----------------------------------')
         pass
+    
+    def set_progress_bar(self, percent):
+        if(percent <= 1):
+            self.get_progressbar_thread.setValue(1)
+            return
+
+        self.get_progressbar_thread.setValue(percent)
 
     def start(self):
         self.__timer.start();
@@ -255,6 +262,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.__strategy.getGoogleBaseLinks(self.__keyword)
         googleLinks = self.__strategy.getGoogleLinks()
+        self.set_progress_bar(1)
 
         for googleLink in googleLinks:
             print(googleLink + "\n")
@@ -281,7 +289,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 break
 
             # 프로그레스바 값 설정
-            self.get_progressbar_thread.setValue(int((index+1)/(targetLinksCount + googleLinksCount)*100))
+            self.set_progress_bar(int((index+1)/(targetLinksCount + googleLinksCount)*100))
 
             try:
                 Basesummarizes = []
@@ -339,7 +347,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             targetIndex = index + googleLinksCount
 
             # 프로그레스바 값 설정
-            self.get_progressbar_thread.setValue(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
+            self.set_progress_bar(int((index+1)/(targetLinksCount + googleLinksCount)*100))
 
             try:
                 sleep(1)
