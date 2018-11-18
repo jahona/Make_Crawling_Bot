@@ -258,21 +258,25 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             print('Not keyword, So Exit')
             return
 
+        if(self.__status == Status.STOPING):
+            self.init()
+
         self.__status = Status.RUNNING
 
-        self.__strategy.getGoogleBaseLinks(self.__keyword)
+        self.__strategy.collectGoogleBaseLinks(self.__keyword)
         googleLinks = self.__strategy.getGoogleLinks()
+        
         self.set_progress_bar(1)
 
         for googleLink in googleLinks:
             print(googleLink + "\n")
             try:
-                self.__strategy.getInternalLinksFromUrl(googleLink)
+                self.__strategy.collectInternalLinksFromUrl(googleLink)
             except:
                 pass
 
             try:
-                self.__strategy.getExternalLinksFromUrl(googleLink)
+                self.__strategy.collectExternalLinksFromUrl(googleLink)
             except:
                 pass
 

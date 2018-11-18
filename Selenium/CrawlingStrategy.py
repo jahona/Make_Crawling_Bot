@@ -13,7 +13,32 @@ class CrawlingStrategy:
         self.__googleLinks = []
         self.__internalLinks = []
         self.__externalLinks = []
+
+        # 문서 필터링
+        self.__whiteList = re.compile('ko.wikipedia.org')
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram|imgurl')
+        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp|tar|xz|pkg|zip)$');
+        self.__blackKeywordList = ['로그인']
         pass
+
+    def linkFilter(self, link):
+        stlink = str(link)
+        m = self.__whiteList.search(stlink)
+        # 화이트 리스트에 있다면 필터하지 않기
+        if(m != None):
+            return False
+
+        m = self.__blackListExtension.search(stlink)
+        if(m != None):
+            return True
+
+        # 블랙 리스트에 있다면 필터하기
+        m = self.__blackList.search(stlink)
+        if(m != None):
+            return True
+
+        # 아무것도 포함되지 않는다면 필터하지 않기
+        return False
 
     def get_html(self, url):
         _html = ""
@@ -31,7 +56,7 @@ class CrawlingStrategy:
     def getExternalLinks(self):
         return self.__externalLinks
 
-    def getGoogleBaseLinks(self, keyword):
+    def collectGoogleBaseLinks(self, keyword):
         self.__googleLinks = []
         self.__internalLinks = []
         self.__externalLinks = []
@@ -50,13 +75,17 @@ class CrawlingStrategy:
                 continue
 
             href = a.get('href')
-            self.__googleLinks.append(google + href)
-            # print(google + href)
+            googleLink = google + href
+
+            if self.linkFilter(googleLink):
+                continue
+
+            self.__googleLinks.append(googleLink)
 
         pass
 
     # 페이지에 발견된 내부 링크를 모두 목록으로 만듭니다.
-    def getInternalLinksFromUrl(self, url):
+    def collectInternalLinksFromUrl(self, url):
         html = self.get_html(url)
         bsObj = BeautifulSoup(html, "html.parser")
 
@@ -67,19 +96,23 @@ class CrawlingStrategy:
         for link in bsObj.findAll("a", href=re.compile("^(/|.*" + includeUrl + ")")):
             if "http" in link.attrs['href']:
                 if link.attrs['href'] not in self.__internalLinks:
-                    self.__internalLinks.append(link.attrs['href'])
+                    href = link.attrs['href']
+                    
             else:
                 if link.attrs['href'] not in self.__internalLinks:
                     if "//" in link.attrs['href']:
-                        self.__internalLinks.append(fullUrl.split("/")[0]+link.attrs['href'])
+                        href = fullUrl.split("/")[0]+link.attrs['href']
                     else:
-                        self.__internalLinks.append(fullUrl.split("/")[0]+"//"+includeUrl+link.attrs['href'])
+                        href = fullUrl.split("/")[0]+"//"+includeUrl+link.attrs['href']
 
+            if(self.linkFilter(href) == False):
+                self.__internalLinks.append(href)
+                
         # for i in range(0, len(self.__internalLinks)):
         #     print(self.__internalLinks[i])
 
     # 페이지에서 발견된 외부 링크를 모두 목록으로 만듭니다.
-    def getExternalLinksFromUrl(self, url):
+    def collectExternalLinksFromUrl(self, url):
         html = self.get_html(url)
         bsObj = BeautifulSoup(html, "html.parser")
 
@@ -90,13 +123,16 @@ class CrawlingStrategy:
         for link in bsObj.findAll("a", href=re.compile("^(http|www)((?!"+excludeUrl+").)*$")):
             if "http" in link.attrs['href']:
                 if link.attrs['href'] not in self.__externalLinks:
-                    self.__externalLinks.append(link.attrs['href'])
+                    href = link.attrs['href']
             else:
                 if link.attrs['href'] not in self.__externalLinks:
                     if "//" in link.attrs['href']:
-                        self.__externalLinks.append(fullUrl.split("/")[0]+link.attrs['href'])
+                        href = fullUrl.split("/")[0]+link.attrs['href']
                     else:
-                        self.__externalLinks.append(fullUrl.split("/")[0]+"//"+excludeUrl+link.attrs['href'])
+                        href = fullUrl.split("/")[0]+"//"+excludeUrl+link.attrs['href']
+
+            if(self.linkFilter(href) == False):
+                self.__externalLinks.append(href)
 
         # for i in range(0, len(self.__externalLinks)):
         #     print(self.__externalLinks[i])
