@@ -200,6 +200,11 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         findkeyword = self.lineEdit_2.text()
 
+        # '' 입력시 메시지 박스 출력 없이 다시 전체 데이터을 보여주기 위해 예외처리
+        if(findkeyword == ''):
+            self.resultToGui()
+            return
+
         reply = QMessageBox.question(self, 'Find Keyword', "키워드를 찾으시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
