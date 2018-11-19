@@ -1,32 +1,28 @@
-import CrawlerBot
-import datetime
-import random
-import os
+import CrawlingStrategy
 import TextRank
-import sys
-import timeit
-import logging
-from time import sleep
 import Validation
-import time
 import math
-import re
+import timeit
 
-from PyQt5 import QtCore, QtWidgets
+# Gui 환경 Set
+from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
 import MainWindow
-import pickle
-
 import webbrowser
-
 import threading
+import sys
+import os
 
-# logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger()
+import datetime
+import random
 random.seed(datetime.datetime.now())
 
+from time import sleep
+from enum import Enum
+
+# TODO: 객체 지향 면으로 보았을 때 static method로 정하는게 좋은것인가?
 class Timer():
     def __self__(self):
         self.__start = None
@@ -41,123 +37,40 @@ class Timer():
     def getTime(self):
         return self.__end - self.__start
 
-class Bot(QMainWindow, MainWindow.Ui_MainWindow):
+class Status(Enum):
+        INITIAL = 0 # 초기상태
+        RUNNING = 1 # 동작상태
+        STOPING = 2 # 중지상태
+        REST = 3    # 휴식상태
+
+class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
     def __init__(self):
+        # Bot 상태
+        self.__status = Status.INITIAL
+        self.__isTest = True;
+
         # 셀러니움 봇 생성
-        self.__bot = CrawlerBot.Selenium()
-
-        # 유사도 검증 클래스
-        self.__validation = Validation.Validation()
-
-        # 문서 필터링
-        self.__whiteList = re.compile('ko.wikipedia.org')
-        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram|imgurl')
-        self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp|tar|xz|pkg|zip)$');
-        self.__blackKeywordList = ['로그인']
-        # 문장 분리기
+        self.__strategy = CrawlingStrategy.CrawlingStrategy()
+        self.__keyword = None
         self.__sentenceTokenizer = TextRank.SentenceTokenizer()
+        self.__timer = Timer()
+
+        self.init()
 
         # GUI 셋팅
         self.guiInit()
-
         pass
 
-    def get_CrawlerBot(self):
-        return self.__bot
-
-    def setIsDev(self, dev):
-        self.__dev = dev
-
-    def setAddress(self, address):
-        self.__address = address
+    def setIsTest(self, flag):
+        self.__isTest = flag;
         pass
 
-    def setKeyword(self, keyword):
-        self.__keyword = keyword
-        pass
-
-    def setBaseKeywordsSet(self, baseKeywordsSet):
-        self.__baseKeywordsSet = baseKeywordsSet
-        pass
-
-    def save_File(self):
-        now = datetime.datetime.now()
-        date = now.strftime('%Y%m%d')
-
-        #file open
-        file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + ".txt", "w", encoding='UTF-8')
-        file.write("------------------------------------------------------------------------------------------------------------------------\n")
-
-        distanceDict = self.__distanceDict
-        row = 0
-        for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
-            try:
-                row += 1
-                file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
-                file.write("key sentence\n")
-                for j, sentence in enumerate(self.__sentenceDict[i]):
-                    if j<5:
-                        file.write(sentence + "\n")
-                file.write("\nkeyword\n" + str(self.__keywordDict[i]) + "\n")
-                file.write("------------------------------------------------------------------------------------------------------------------------\n")
-            except:
-                file.write("------------------------------------------------------------------------------------------------------------------------\n")
-                pass
-
-        file.close()
-
-    def resultToGui(self):
-        self.tableWidget.setRowCount(0)
-        row = 0
-        distanceDict = self.__distanceDict
-
-        self.tableWidget.setRowCount(len(distanceDict))
-
-        for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
-            contents = ""
-            contents += "key sentence\n"
-
-            for j, sentence in enumerate(self.__sentenceDict[i]):
-                if j<5:
-                    if len(sentence) > 100:
-                        contents += sentence[0:97]
-                        contents += "...\n"
-                    else:
-                        contents += str(sentence) + "\n"
-
-            contents += "\n"
-            contents += "keyword\n"
-
-            for k, keyword in enumerate(self.__keywordDict[i]):
-                if k+1 == len(self.__keywordDict[i]):
-                    contents += keyword
-                else:
-                    contents += keyword + ", "
-
-            self.tableWidget.setItem(row, 0, QTableWidgetItem(str(self.__linkDict[i])))
-            self.tableWidget.item(row, 0).setForeground(Qt.blue)
-            self.tableWidget.setItem(row, 1, QTableWidgetItem(contents))
-            row += 1
-
-        self.tableWidget.resizeColumnToContents(1)
-        self.tableWidget.resizeRowsToContents()
-
-    def OpenLink(self, item):
-        if item.column() == 0:
-            webbrowser.open(self.tableWidget.item(item.row(), item.column()).text())
-
-    def init(self):
-        # 정상적으로 종료된 링크 저장
-        self.__linkDict = dict()
-        self.__sentenceDict = dict()
-        self.__keywordDict = dict()
-        self.__distanceDict = dict()
-        self.__validation.init_dic()
-        self.__validation.init_base_normalized()
+    def getIsTest(self, flag):
+        return self.__isTest
 
     def guiInit(self):
         #GUI 추가
-        QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
         self.setupUi(self)
 
         # 검색 버튼 이벤트 핸들링
@@ -170,6 +83,10 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         # 저장 버튼 이벤트 핸들링
         self.btnSave.clicked.connect(self.save_File)
 
+        # 키워드 검색 버튼 이벤트 핸들링
+        self.btnFind.clicked.connect(self.btnFindClickEvent)
+        self.btnFind.setAutoDefault(True)
+
         self.tableWidget.itemDoubleClicked.connect(self.OpenLink)
 
         # 메인윈도우 보이기
@@ -178,233 +95,142 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         # progress bar thread start
         self.get_progressbar_thread.start()
 
+    def stop_thread(self):
+        if(self.__status != Status.RUNNING):
+            QMessageBox.information(self, 'ALARM', "검색 중 상태가 아닙니다.", QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+        reply = QMessageBox.question(self, 'STOP', "검색을 중지하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.__threadStopFlag = True
+            self.__t.join()
+            self.__status = Status.STOPING
+        else:
+            return
+
+    def stop_thread_check(self):
+        if(self.__threadStopFlag == True):
+            return True
+
+        return False
+
+    def items_clear(self):
+        self.tableWidget.setRowCount(0)
+
+    def resultToGui(self, findkeyword=None):
+        self.items_clear()
+
+        row = 0
+        distanceDict = self.__distanceDict
+
+        # TODO: distanceDict만큼 생성하는게 너무 불필요해보임
+        self.tableWidget.setRowCount(len(distanceDict))
+
+        # TODO: 한 행마다 출력문들을 객체화 시켜서 깔끔하게 유지하기
+        for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
+            contents = ""
+            contents += "keyword\n"
+
+            if(self.__status == Status.STOPING and findkeyword is not None and findkeyword is not ''):
+                if findkeyword not in self.__keywordDict[i]:
+                    continue
+
+            for k, keyword in enumerate(self.__keywordDict[i]):
+                if k+1 == len(self.__keywordDict[i]):
+                    contents += keyword
+                else:
+                    contents += keyword + ", "
+
+            contents += "\n\n"
+
+            for j, sentence in enumerate(self.__sentenceDict[i]):
+                if j<5:
+                    if len(sentence) > 100:
+                        contents += str(j+1) + ". " + sentence[0:100]
+                        contents += "...\n"
+                    else:
+                        contents += str(j+1) + ". " + str(sentence) + "\n"
+
+            self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(str(self.__linkDict[i])))
+            self.tableWidget.item(row, 0).setForeground(Qt.blue)
+            self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(contents))
+
+            row += 1
+
+        print(len(distanceDict))
+        print(row)
+        if len(distanceDict) > row:
+            for ri in range(row, len(distanceDict)):
+                print(ri)
+                self.tableWidget.removeRow(row)
+
+        self.tableWidget.resizeColumnToContents(1)
+        self.tableWidget.resizeRowsToContents()
+
+    def OpenLink(self, item):
+        if item.column() == 0:
+            webbrowser.open(self.tableWidget.item(item.row(), item.column()).text())
+
     def btnSearchClickEvent(self):
+        if(self.__status == Status.RUNNING):
+            QMessageBox.information(self, 'ALARM', "이미 검색 중입니다.", QMessageBox.Ok, QMessageBox.Ok)
+            return
+
         keyword = self.lineEdit.text()
 
         self.setKeyword(keyword)
 
-        self.__t = threading.Thread(target=self.botStart)
-        self.get_progressbar_thread.setValue(0)
-        self.__threadStopFlag = False
-        self.__t.start()
+        reply = QMessageBox.question(self, 'Search', "검색을 시작하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
-    def botStart(self):
-        # dic() clean
-        t = Timer()
-        t.start()
+        if reply == QMessageBox.Yes:
+            self.__t = threading.Thread(target=self.start)
+            self.get_progressbar_thread.setValue(0)
+            self.__threadStopFlag = False
+            self.init()
+            self.items_clear()
+            self.__t.start()
+        else:
+            return
 
-        self.init()
-
-        # Google 에 해당 키워드 검색 후 화면 이동
-        self.__bot.search_keyword_based_on_google(self.__keyword)
-
-        self.__keyword = self.__keyword.replace(" ", "")
-
-        # Return Google Search List
-        googleLinks = self.__bot.get_google_links()
-
-        externalLinks = []
-        internalLinks = []
-
-        # googleLinks에 있는 link들을 탐색
-        for index, link in enumerate(googleLinks):
-            if(self.stop_thread_check()):
-                break
-
-            if self.linkFilter(link):
-                del googleLinks[index]
-                continue
-
-            try:
-                # 해당 페이지의 page source get
-                self.__bot.go_page(link)
-
-                pageSource = self.__bot.get_page_source()
-                bsObj = self.__bot.get_bs_obj(pageSource)
-            except Exception as e:
-                print(e)
-                print('셀러니움 에러')
-                continue
-
-            try:
-                # 외부 링크를 배제를 위한 host 부분 추출
-                excludeUrl = self.__bot.split_address(link)
-
-                # 외부 링크 흭득
-                for externalLink in self.__bot.get_external_links(bsObj, excludeUrl, self.__keyword):
-                    if self.linkFilter(externalLink) or externalLink in externalLinks or externalLink in googleLinks:
-                        continue
-                    externalLinks.append(externalLink)
-
-                # 내부 링크 흭득
-                for internalLink in self.__bot.get_internal_links(bsObj, excludeUrl, link, self.__keyword):
-                    if self.linkFilter(internalLink) or internalLink in internalLinks or internalLink in googleLinks:
-                        continue
-                    internalLinks.append(internalLink)
-
-                # TODO: url 탐색 후 쿠키, 세션 삭제
-            except Exception as e:
-                print(e)
-                print('외부/내부 링크 흭득 에러')
-                continue
-
-            try:
-                Basesummarizes = []
-                textrank = TextRank.TextRank(pageSource)
-                summarizes = textrank.summarize(10)
-                keywords = textrank.keywords()
-
-                # 구글 링크 문서의 키워드에 __keyword가 포함되어 있지 않다면 예외처리
-                if(self.keywordFilter(keywords) == True):
-                    continue
-
-                for sentence in summarizes:
-                    Basesummarizes.append(sentence)
-
-                for sentence in textrank.sentences:
-                    if self.__keyword in sentence:
-                        Basesummarizes.append(sentence)
-
-                self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
-
-                self.__validation.set_dic(index, 0)
-            except Exception as e:
-                print(e)
-                print('문서 요약 에러')
-                continue
-
-            self.printCommand(index, link, summarizes, keywords)
-
-            self.__linkDict[index] = link
-            self.__sentenceDict[index] = summarizes
-            self.__keywordDict[index] = keywords
-
-            self.__distanceDict = self.__validation.get_dic()
-
-            self.resultToGui()
-
-        # 비교 기준이 되는 문서들의 벡터 구하기
-        self.__validation.base_vectorizing()
-
-        # 외부, 내부 링크들에 대해 TR 수행
-        allLinks = externalLinks + internalLinks
-
-        print("전체 링크수 : ", len(allLinks))
-
-        # 외부/내부 링크 탐색 시작
-        self.travelLink(allLinks, len(googleLinks))
-
-        t.end()
-
-        print('running time: ', t.getTime())
-        pass
-
-    def travelLink(self, links, baselength):
-        for (index, link) in enumerate(links):
-            if(self.stop_thread_check()):
-                break
-            Dictindex = index + baselength
-
-            # 프로그레스바 값 설정
-            self.get_progressbar_thread.setValue(int((Dictindex+1)/(len(links)+baselength)*100))
-
-            #페이지 이동
-            try:
-                self.__bot.go_page(link)
-                pageSource = self.__bot.get_page_source()
-            except Exception as e:
-                print(e)
-                print('셀러니움 에러')
-                continue
-
-            try:
-                # 요약문 구하기
-                textrank = TextRank.TextRank(pageSource)
-                summarizes = textrank.summarize(10)
-                keywords = textrank.keywords()
-
-                if(self.keywordFilter(keywords) == True):
-                    continue
-            except Exception as e:
-                print(e)
-                print('TextRank 에러')
-                continue
-
-            try:
-                self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
-            except Exception as e:
-                print(e)
-                print('vectorizer 에러')
-                continue
-
-            # 유클리드 거리 구하기
-            try:
-                # base와 target간에 유클리드 거리 구하기
-                distance = self.__validation.dist_norm()
-
-                if math.isnan(distance) == True:
-                    raise ValueError
-
-                self.__validation.set_dic(Dictindex, distance)
-            except ValueError as e:
-                print(e)
-                print('distance가 nan입니다')
-                continue
-            except:
-                print('유클리드 거리 구하기 에러')
-                continue
-
-            self.printCommand(Dictindex, link, summarizes, keywords, distance)
-
-            self.__linkDict[Dictindex] = link
-            self.__sentenceDict[Dictindex] = summarizes
-            self.__keywordDict[Dictindex] = keywords
-
-            self.__distanceDict = self.__validation.get_dic()
-
-            self.resultToGui()
-
-        pass
-
-    def keywordFilter(self, keywords):
-        flag = False
-        for keyword in keywords:
-            if keyword in self.__blackKeywordList:
-                return True
-
-            if keyword in self.__keyword:
-                flag = True
-                break
-
-        if(flag == False):
-            print('검색어가 키워드에 없습니다.')
-            return True
-
-        return False
-
-    def linkFilter(self, link):
-        stlink = str(link)
-        m = self.__whiteList.search(stlink)
-        # 화이트 리스트에 있다면 필터하지 않기
-        if(m != None):
+    def btnFindClickEvent(self):
+        if(self.__status != Status.STOPING):
+            print('do not execute find')
             return False
 
-        m = self.__blackListExtension.search(stlink)
-        if(m != None):
-            return True
+        findkeyword = self.lineEdit_2.text()
 
-        # 블랙 리스트에 있다면 필터하기
-        m = self.__blackList.search(stlink)
-        if(m != None):
-            return True
+        # '' 입력시 메시지 박스 출력 없이 다시 전체 데이터을 보여주기 위해 예외처리
+        if(findkeyword == ''):
+            self.resultToGui()
+            return
 
-        # 아무것도 포함되지 않는다면 필터하지 않기
-        return False
+        reply = QMessageBox.question(self, 'Find Keyword', "키워드를 찾으시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
-    def printCommand(self, index, link, summarizes, keywords, distance=None):
+        if reply == QMessageBox.Yes:
+            self.resultToGui(findkeyword)
+
+            print(findkeyword)
+        else:
+            return
+
+    def init(self):
+        # 정상적으로 종료된 링크 저장
+        self.__linkDict = dict()
+        self.__sentenceDict = dict()
+        self.__keywordDict = dict()
+        self.__distanceDict = dict()
+        self.__validation = Validation.Validation()
+        self.__validation.init_dic()
+        self.__validation.init_base_normalized()
+
+    def setKeyword(self, keyword):
+        self.__keyword = keyword
+
+    def printCommand(self, index, googleLink, summarizes, keywords, distance=None):
         print('----------------------------------')
 
-        print('link', index, link)
+        print('url ', index, ' : ', googleLink)
 
         for i, summarize in enumerate(summarizes):
             if i<5:
@@ -417,30 +243,211 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
 
         print('----------------------------------')
         pass
+    
+    def set_progress_bar(self, percent):
+        if(percent <= 1):
+            self.get_progressbar_thread.setValue(1)
+            return
 
-    def stop_thread(self):
-        self.__threadStopFlag = True
-        self.__t.join()
+        self.get_progressbar_thread.setValue(percent)
 
-    def stop_thread_check(self):
-        if(self.__threadStopFlag == True):
-            return True
+    def start(self):
+        self.__timer.start();
 
-        return False
+        if(self.__keyword == None):
+            print('Not keyword, So Exit')
+            return
 
-# variable
-address = "https://www.google.co.kr"
+        if(self.__status == Status.STOPING):
+            self.init()
 
-app = QApplication(sys.argv)
+        self.__status = Status.RUNNING
 
-# Bot Setting
-Bot = Bot()
-Bot.setAddress(address)
-app.exec_()
-Bot.get_CrawlerBot().quit()
+        self.__strategy.collectGoogleBaseLinks(self.__keyword)
+        googleLinks = self.__strategy.getGoogleLinks()
+        
+        self.set_progress_bar(1)
 
-# Bot start
-# start = timeit.default_timer()
-# Bot.bot_start()
-# stop = timeit.default_timer()
-# print(stop - start)
+        for googleLink in googleLinks:
+            print(googleLink + "\n")
+            try:
+                self.__strategy.collectInternalLinksFromUrl(googleLink)
+            except:
+                pass
+
+            try:
+                self.__strategy.collectExternalLinksFromUrl(googleLink)
+            except:
+                pass
+
+        internalLinks = self.__strategy.getInternalLinks()
+        externalLinks = self.__strategy.getExternalLinks()
+
+        googleLinksCount = len(googleLinks)
+        targetLinks = internalLinks + externalLinks
+        targetLinksCount = len(targetLinks)
+        print(targetLinksCount)
+
+        for index, googleLink in enumerate(googleLinks):
+            if(self.stop_thread_check()):
+                break
+
+            # 프로그레스바 값 설정
+            self.set_progress_bar(int((index+1)/(targetLinksCount + googleLinksCount)*100))
+
+            try:
+                Basesummarizes = []
+                textrank = TextRank.TextRank(googleLink)
+                summarizes = textrank.summarize(10)
+                keywords = textrank.keywords()
+
+                for sentence in summarizes:
+                    Basesummarizes.append(sentence)
+
+                for sentence in textrank.sentences:
+                    for word in sentence.split(" "):
+                        if word in self.__keyword:
+                            Basesummarizes.append(sentence)
+                            break
+
+                flag = 0
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = 1
+                        break
+
+                if flag == 0:
+                    print("검색어가 키워드에 없습니다.")
+                    print(self.__keyword)
+                    continue
+
+                self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
+                self.__validation.set_dic(index, 0)
+            except:
+                print('textrank not working')
+                continue
+
+            self.printCommand(index, googleLink, summarizes, keywords)
+
+            self.__linkDict[index] = googleLink
+            self.__sentenceDict[index] = summarizes
+            self.__keywordDict[index] = keywords
+
+            self.__distanceDict = self.__validation.get_dic()
+
+            self.resultToGui()
+
+        # googleLinks 들에 대해 벡터 구하여 앞으로 비교할 벡터의 기준이 되게 하기
+        self.__validation.base_vectorizing()
+
+        for index, targetLink in enumerate(targetLinks):
+            if(self.stop_thread_check()):
+                break
+
+            if(self.getIsTest and index>10):
+                print('index over 20 count for test, so exit')
+                break
+
+            targetIndex = index + googleLinksCount
+
+            # 프로그레스바 값 설정
+            self.set_progress_bar(int((index+1)/(targetLinksCount + googleLinksCount)*100))
+
+            try:
+                sleep(1)
+                textrank = TextRank.TextRank(targetLink)
+                summarizes = textrank.summarize(10)
+                keywords = textrank.keywords()
+
+                flag = 0
+                for keyword in keywords:
+                    if keyword in self.__keyword:
+                        flag = 1
+                        break
+
+                if flag == 0:
+                    print("검색어가 키워드에 없습니다.")
+                    print(self.__keyword)
+                    continue
+
+                self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
+
+                distance = self.__validation.dist_norm()
+
+                if math.isnan(distance) == True:
+                    raise ValueError
+
+                self.__validation.set_dic(targetIndex, distance)
+            except:
+                print('textrank not working')
+                continue
+
+            self.printCommand(targetIndex, targetLink, summarizes, keywords, distance)
+
+            self.__linkDict[targetIndex] = targetLink
+            self.__sentenceDict[targetIndex] = summarizes
+            self.__keywordDict[targetIndex] = keywords
+            self.__distanceDict = self.__validation.get_dic()
+
+            self.resultToGui()
+
+        self.__timer.end();
+        self.__status = Status.STOPING
+
+        print("검색어: " + self.__keyword)
+        print("running time: " + str(self.__timer.getTime()));
+        print(targetLinksCount)
+
+        pass
+
+    def save_File(self):
+        if(self.__status != Status.STOPING):
+            return
+
+        reply = QMessageBox.question(self, 'SAVE', "결과를 저장하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            now = datetime.datetime.now()
+            date = now.strftime('%Y%m%d')
+
+            #file open
+            file = open(os.getcwd() + "/" + str(date) + "_" + self.__keyword + ".txt", "w", encoding='UTF-8')
+            file.write("------------------------------------------------------------------------------------------------------------------------\n")
+
+            distanceDict = self.__distanceDict
+            row = 0
+            for i in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
+                try:
+                    row += 1
+                    file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
+                    file.write("keywordsn\n")
+
+                    for k, keyword in enumerate(self.__keywordDict[i]):
+                        if k+1 == len(self.__keywordDict[i]):
+                            file.write(str(keyword) + "\n\n")
+                        else:
+                            file.write(str(keyword+', '))
+
+                    for j, sentence in enumerate(self.__sentenceDict[i]):
+                        if j<5:
+                            if len(sentence) > 100:
+                                file.write(str(j+1) + ". ")
+                                for l in range(0, int(len(sentence)/100)+1):
+                                    file.write(sentence[l*100:(l+1)*100] + "\n")
+                            else:
+                                file.write(str(j+1) + ". " + sentence + "\n")
+                    file.write("------------------------------------------------------------------------------------------------------------------------\n")
+                except:
+                    file.write("------------------------------------------------------------------------------------------------------------------------\n")
+                    pass
+
+            file.close()
+        else:
+            return
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = Bot()
+    ## !!테스트 용으로 사용할 때는 아래 주석 지우지 말고, 실제 기능으로 테스트해보고 싶을 때 아래 주석 제거해서 사용하셈.
+    # ex.setIsTest(False)
+    sys.exit(app.exec_())
