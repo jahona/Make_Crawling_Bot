@@ -156,17 +156,17 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             self.tableWidget.item(row, 0).setForeground(Qt.blue)
             self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(contents))
 
+            self.tableWidget.resizeColumnToContents(1)
+            self.tableWidget.resizeRowsToContents()            
+
             row += 1
 
-        print(len(distanceDict))
-        print(row)
         if len(distanceDict) > row:
             for ri in range(row, len(distanceDict)):
-                print(ri)
                 self.tableWidget.removeRow(row)
 
-        self.tableWidget.resizeColumnToContents(1)
-        self.tableWidget.resizeRowsToContents()
+        # self.tableWidget.resizeColumnToContents(1)
+        # self.tableWidget.resizeRowsToContents()
 
     def OpenLink(self, item):
         if item.column() == 0:
@@ -243,7 +243,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         print('----------------------------------')
         pass
-    
+
     def set_progress_bar(self, percent):
         if(percent <= 1):
             self.get_progressbar_thread.setValue(1)
@@ -265,7 +265,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.__strategy.collectGoogleBaseLinks(self.__keyword)
         googleLinks = self.__strategy.getGoogleLinks()
-        
+
         self.set_progress_bar(1)
 
         for googleLink in googleLinks:
@@ -344,14 +344,14 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             if(self.stop_thread_check()):
                 break
 
-            if(self.getIsTest and index>10):
-                print('index over 20 count for test, so exit')
-                break
+            # if(self.getIsTest and index>10):
+            #     print('index over 20 count for test, so exit')
+            #     break
 
             targetIndex = index + googleLinksCount
 
             # 프로그레스바 값 설정
-            self.set_progress_bar(int((index+1)/(targetLinksCount + googleLinksCount)*100))
+            self.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
 
             try:
                 sleep(1)
@@ -367,7 +367,6 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
                 if flag == 0:
                     print("검색어가 키워드에 없습니다.")
-                    print(self.__keyword)
                     continue
 
                 self.__validation.target_vectorizing(self.__sentenceTokenizer.get_nouns(summarizes))
@@ -396,7 +395,7 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
         print("검색어: " + self.__keyword)
         print("running time: " + str(self.__timer.getTime()));
-        print(targetLinksCount)
+        print(targetIndex+1)
 
         pass
 
