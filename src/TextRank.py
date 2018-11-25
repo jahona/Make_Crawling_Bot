@@ -36,11 +36,12 @@ class SentenceTokenizer(object):
 
         # kkma를 이용해 문장단위로 분리하여 배열 리턴
         sentences = self.kkma.sentences(article.text)
-
         for idx in range(0, len(sentences)):
-            if len(sentences[idx]) <= 10:
+            if len(sentences[idx]) <= 20:
                 sentences[idx-1] += (' ' + sentences[idx])
                 sentences[idx] = ''
+
+        sentences = list(filter(None, sentences)) # fastest
 
         return sentences
 
@@ -51,6 +52,8 @@ class SentenceTokenizer(object):
             if len(sentences[idx]) <= 10:
                 sentences[idx-1] += (' ' + sentences[idx])
                 sentences[idx] = ''
+
+        sentences = list(filter(None, sentences)) # fastest
 
         return sentences
 
@@ -184,6 +187,8 @@ class TextRank(object):
 
 # 사용방법
 # url = 'https://namu.wiki/w/C(%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%20%EC%96%B8%EC%96%B4)'
+# tok = SentenceTokenizer()
+# tok.url2sentences('https://www.google.co.kr/url?q=https://www.huffingtonpost.kr/2017/02/01/story_n_5349998.html&sa=U&ved=0ahUKEwictIaZ6-_eAhUDWrwKHRs0AKYQFghrMA0&usg=AOvVaw1vC_-acH_nEZjxdSqbaT_x')
 # textrank = TextRank(url)
 # for row in textrank.summarize(3):
 #     print(row)
