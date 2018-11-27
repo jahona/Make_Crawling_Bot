@@ -42,7 +42,8 @@ class SentenceTokenizer(object):
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
-
+        sentences = list(filter(lambda s: '[ 편집]' not in s, sentences))
+        
         return sentences
 
     # text 를 입력받아 문장단위로 분리하여 배열 리턴
@@ -54,6 +55,7 @@ class SentenceTokenizer(object):
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
+        sentences = list(filter(lambda s: '[ 편집]' not in s, sentences))
 
         return sentences
 
@@ -187,8 +189,8 @@ class TextRank(object):
 
 # 사용방법
 # url = 'https://namu.wiki/w/C(%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%20%EC%96%B8%EC%96%B4)'
-# tok = SentenceTokenizer()
-# tok.url2sentences('https://www.google.co.kr/url?q=https://www.huffingtonpost.kr/2017/02/01/story_n_5349998.html&sa=U&ved=0ahUKEwictIaZ6-_eAhUDWrwKHRs0AKYQFghrMA0&usg=AOvVaw1vC_-acH_nEZjxdSqbaT_x')
+tok = SentenceTokenizer()
+tok.url2sentences('https://namu.wiki/w/%EC%BB%A4%ED%94%BC')
 # textrank = TextRank(url)
 # for row in textrank.summarize(3):
 #     print(row)
