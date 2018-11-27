@@ -415,11 +415,11 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
             distanceDict = self.__distanceDict
             row = 0
-            for i in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
+            for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
                 try:
                     row += 1
                     file.write("link " + str(row) + " : " + str(self.__linkDict[i]) + "\n\n")
-                    file.write("keywordsn\n")
+                    file.write("keywords\n")
 
                     for k, keyword in enumerate(self.__keywordDict[i]):
                         if k+1 == len(self.__keywordDict[i]):
