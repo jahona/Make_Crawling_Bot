@@ -42,7 +42,7 @@ class SentenceTokenizer(object):
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
-        sentences = list(filter(lambda s: '[ 편집]' not in s, sentences))
+        sentences = list(filter(lambda s: '[ 편집 ]' not in s, sentences))
 
         return sentences
 
@@ -55,7 +55,7 @@ class SentenceTokenizer(object):
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
-        sentences = list(filter(lambda s: '[ 편집]' not in s, sentences))
+        sentences = list(filter(lambda s: '[ 편집 ]' not in s, sentences))
 
         return sentences
 
@@ -190,7 +190,7 @@ class TextRank(object):
 # 사용방법
 # url = 'https://namu.wiki/w/C(%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%20%EC%96%B8%EC%96%B4)'
 # tok = SentenceTokenizer()
-# tok.url2sentences('https://namu.wiki/w/%EC%BB%A4%ED%94%BC')
+# tok.url2sentences('https://ko.wikipedia.org/wiki/%EC%BB%A4%ED%94%BC')
 # textrank = TextRank(url)
 # for row in textrank.summarize(3):
 #     print(row)
