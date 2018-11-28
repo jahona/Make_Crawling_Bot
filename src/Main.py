@@ -156,8 +156,8 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             self.tableWidget.item(row, 0).setForeground(Qt.blue)
             self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(contents))
 
-            self.tableWidget.resizeColumnToContents(1)
-            self.tableWidget.resizeRowsToContents()            
+            # self.tableWidget.resizeColumnToContents(1)
+            # self.tableWidget.resizeRowsToContents()
 
             row += 1
 
@@ -166,7 +166,8 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                 self.tableWidget.removeRow(row)
 
         # self.tableWidget.resizeColumnToContents(1)
-        # self.tableWidget.resizeRowsToContents()
+        self.tableWidget.resizeRowsToContents()
+        self.tableWidget.resizeColumnToContents(1)
 
     def OpenLink(self, item):
         if item.column() == 0:
@@ -318,7 +319,6 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
 
                 if flag == 0:
                     print("검색어가 키워드에 없습니다.")
-                    print(self.__keyword)
                     continue
 
                 self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
@@ -348,13 +348,16 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             #     print('index over 20 count for test, so exit')
             #     break
 
+            if index % 100 == 0:
+                sleep(1)
+
             targetIndex = index + googleLinksCount
 
             # 프로그레스바 값 설정
             self.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
 
             try:
-                sleep(1)
+
                 textrank = TextRank.TextRank(targetLink)
                 summarizes = textrank.summarize(10)
                 keywords = textrank.keywords()
@@ -432,7 +435,10 @@ class Bot(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                             if len(sentence) > 100:
                                 file.write(str(j+1) + ". ")
                                 for l in range(0, int(len(sentence)/100)+1):
-                                    file.write(sentence[l*100:(l+1)*100] + "\n")
+                                    if l == 0:
+                                        file.write(sentence[l*100:(l+1)*100] + "\n")
+                                    else:
+                                        file.write("   " + sentence[l*100:(l+1)*100] + "\n")
                             else:
                                 file.write(str(j+1) + ". " + sentence + "\n")
                     file.write("------------------------------------------------------------------------------------------------------------------------\n")
