@@ -3,6 +3,7 @@ import LinkFilter
 import Node
 import TextRank
 import Validation
+import Timer
 
 from enum import Enum
 from time import sleep
@@ -32,9 +33,29 @@ class Bot(SingletonInstane):
         self.__behavior = CrawlingBehavior.CrawlingBehavior(LinkFilter.LinkFilterStrategyOne())
         self.__status = Status.INITIAL
         self.__keyword = None
+        self.__timer = Timer.Timer()
+
         self.init()
         pass
+    
+    def get_status(self):
+        return self.__status
 
+    def get_link_dict(self):
+        return self.__linkDict
+
+    def get_sentence_dict(self):
+        return self.__sentenceDict
+
+    def get_keyword_dict(self):
+        return self.__keywordDict
+
+    def get_distance_dict(self):
+        return self.__distanceDict
+
+    def get_keword(self):
+        return self.__keyword
+        
     def init(self):
         self.__linkDict = dict()
         self.__sentenceDict = dict()
@@ -91,7 +112,7 @@ class Bot(SingletonInstane):
 
         self.__distanceDict = self.__validation.get_dic()
 
-        # self.resultToGui()
+        self.__observer.resultToGui()
 
     def target_vectorize(self, targetIndex, targetLink):
         try:
@@ -128,7 +149,10 @@ class Bot(SingletonInstane):
         self.__keywordDict[targetIndex] = keywords
         self.__distanceDict = self.__validation.get_dic()
 
-        # self.resultToGui()
+        self.__observer.resultToGui()
+
+    def register_observer(self, observer):
+        self.__observer = observer
 
     def start(self):
         if(self.__keyword == None):
@@ -139,6 +163,9 @@ class Bot(SingletonInstane):
             self.init()
 
         self.__status = Status.RUNNING
+        self.__timer.start()
+
+        self.__observer.set_progress_bar(1)
 
         self.__behavior.collect_google_base_links(self.__keyword)
         self.__behavior.collect_internal_links_from_url()
@@ -159,23 +186,33 @@ class Bot(SingletonInstane):
         print('target count : ', targetLinksCount)
 
         for index, node in enumerate(googleLinkNodes):
+            if(self.__observer.stop_thread_check()):
+                break
+
             self.base_vectorize(index, node.link)
 
         self.__validation.base_vectorizing()
         
         for index, targetLink in enumerate(targetLinks):
+            if(self.__observer.stop_thread_check()):
+                break
+
             if index % 100 == 0:
                 sleep(1)
 
-            # 프로그레스바 값 설정
-            # self.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
-
             targetIndex = index + googleLinksCount
+
+            # 프로그레스바 값 설정
+            self.__observer.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
 
             self.target_vectorize(targetIndex, targetLink)
 
-        # self.__timer.end();
-        # self.__status = Status.STOPING
+        self.__timer.end();
+        self.__status = Status.STOPING
+
+        print("검색어: " + self.__keyword)
+        # print("running time: " + str(self.__timer.getTime()));
+        print(targetIndex+1)
 
     def printCommand(self, index, googleLink, summarizes, keywords, distance=None):
         print('----------------------------------')
@@ -194,9 +231,9 @@ class Bot(SingletonInstane):
         print('----------------------------------')
         pass
 
-bot = Bot.instance()
+# bot = Bot.instance()
 # bot = Bot.instance()
 # bot = Bot.instance()
 
-bot.set_keyword('커피')
-bot.start()
+# bot.set_keyword('커피')
+# bot.start()
