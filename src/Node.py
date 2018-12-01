@@ -23,6 +23,12 @@ class GoogleLinkNode:
             return
         self.__externalLinks.append(link)
 
+    def get_internal_links(self):
+        return self.__internalLinks
+    
+    def get_external_links(self):
+        return self.__externalLinks
+        
     @staticmethod
     def get_nodes():
         return GoogleLinkNode.__nodes

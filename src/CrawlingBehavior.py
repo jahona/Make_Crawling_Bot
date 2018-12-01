@@ -93,6 +93,7 @@ class CrawlingBehavior():
                 if(self.__linkFilter._filter(href)):
                     continue
                 
+                print(href)
                 node.add_to_internal_link(href)
 
                 # print(href)
@@ -121,14 +122,14 @@ class CrawlingBehavior():
                 if(self.__linkFilter._filter(href)):
                     continue
                 
+                print(href)
                 node.add_to_external_link(href)
+    
 
-                # print(href)
+# crawling = CrawlingBehavior(LinkFilter.LinkFilterStrategyOne())
+# crawling.collect_google_base_links('커피')
 
-crawling = CrawlingBehavior(LinkFilter.LinkFilterStrategyOne())
-crawling.collect_google_base_links('커피')
-
-crawling.collect_internal_links_from_url()
-crawling.collect_external_links_from_url()
+# crawling.collect_internal_links_from_url()
+# crawling.collect_external_links_from_url()
 # # # Crawler.getInternalLinksFromUrl('https://namu.wiki/w/C%EC%96%B8%EC%96%B4')
 # CrawlingStrategy.getExternalLinksFromUrl('https://namu.wiki/w/C%EC%96%B8%EC%96%B4')
