@@ -207,11 +207,11 @@ class Bot(SingletonInstane):
 
             self.target_vectorize(targetIndex, targetLink)
 
-        self.__timer.end();
+        self.__timer.end()
         self.__status = Status.STOPING
 
         print("검색어: " + self.__keyword)
-        # print("running time: " + str(self.__timer.getTime()));
+        print("running time: " + str(self.__timer.getTime()))
         print(targetIndex+1)
 
     def printCommand(self, index, googleLink, summarizes, keywords, distance=None):

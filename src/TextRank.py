@@ -42,7 +42,7 @@ class SentenceTokenizer(object):
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
-        sentences = list(filter(lambda s: '[ 편집 ]' not in s, sentences))
+        sentences = list(filter(lambda s: '편집' not in s, sentences))
 
         return sentences
 
@@ -50,12 +50,12 @@ class SentenceTokenizer(object):
     def text2sentences(self, text):
         sentences = self.kkma.sentences(text)
         for idx in range(0, len(sentences)):
-            if len(sentences[idx]) <= 10:
+            if len(sentences[idx]) <= 20:
                 sentences[idx-1] += (' ' + sentences[idx])
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
-        sentences = list(filter(lambda s: '[ 편집 ]' not in s, sentences))
+        sentences = list(filter(lambda s: '편집' not in s, sentences))
 
         return sentences
 
