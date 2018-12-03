@@ -152,7 +152,7 @@ class TextRank(object):
             self.word_rank_idx = self.rank.get_ranks(self.words_graph)
             self.sorted_word_rank_idx = sorted(self.word_rank_idx, key=lambda k: self.word_rank_idx[k], reverse=True)
         except Exception:
-            print('TextRank 에러 발견 None Type 리턴')
+            print('TextRank 가 불가능한 링크입니다. None을 리턴합니다.')
             return None
 
     def summarize(self, sent_num=3):
