@@ -115,9 +115,7 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             self.tableWidget.setItem(row, 0, QtWidgets.QTableWidgetItem(str(linkDict[i])))
             self.tableWidget.item(row, 0).setForeground(Qt.blue)
             self.tableWidget.setItem(row, 1, QtWidgets.QTableWidgetItem(contents))
-
-            # self.tableWidget.resizeColumnToContents(1)
-            # self.tableWidget.resizeRowsToContents()
+            self.tableWidget.item(row, 1).setFlags(QtCore.Qt.ItemIsEnabled)
 
             row += 1
 
@@ -125,9 +123,9 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             for ri in range(row, len(distanceDict)):
                 self.tableWidget.removeRow(row)
 
-        # self.tableWidget.resizeColumnToContents(1)
         self.tableWidget.resizeRowsToContents()
         self.tableWidget.resizeColumnToContents(1)
+
 
     def OpenLink(self, item):
         if item.column() == 0:
@@ -200,7 +198,7 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             keywordDict = self.bot.get_keyword_dict()
             sentenceDict = self.bot.get_sentence_dict()
             linkDict = self.bot.get_link_dict()
-            
+
             row = 0
             for i, distance in sorted(distanceDict.items(), key=lambda distanceDict:distanceDict[1]):
                 try:
@@ -222,7 +220,10 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
                                     if l == 0:
                                         file.write(sentence[l*100:(l+1)*100] + "\n")
                                     else:
-                                        file.write("   " + sentence[l*100:(l+1)*100] + "\n")
+                                        if(sentence[l*100] == " "):
+                                            file.write("  " + sentence[l*100:(l+1)*100] + "\n")
+                                        else:
+                                            file.write("   " + sentence[l*100:(l+1)*100] + "\n")
                             else:
                                 file.write(str(j+1) + ". " + sentence + "\n")
                     file.write("------------------------------------------------------------------------------------------------------------------------\n")

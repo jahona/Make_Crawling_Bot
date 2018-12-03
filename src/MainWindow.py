@@ -143,7 +143,6 @@ class Ui_MainWindow(object):
         self.tableWidget.setObjectName("tableWidget")
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
         item.setBackground(QtGui.QColor(222, 222, 222))
         self.tableWidget.setHorizontalHeaderItem(1, item)
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
