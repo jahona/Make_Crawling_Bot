@@ -191,9 +191,11 @@ class Bot(SingletonInstane, Subject):
 
         googleLinksCount = len(googleLinkNodes)
         targetLinks = internalLinks + externalLinks
+        targetLinks = set(targetLinks)
         targetLinksCount = len(targetLinks)
-        print('target count : ', targetLinksCount)
 
+        print('target count : ', targetLinksCount)
+        
         for index, node in enumerate(googleLinkNodes):
             if(self._observer.stop_thread_check()):
                 break
@@ -202,7 +204,7 @@ class Bot(SingletonInstane, Subject):
 
         self.__validation.base_vectorizing()
         
-        for index, targetLink in enumerate(targetLinks):
+        for index, targetLink in enumerate(set(targetLinks)):
             if(self._observer.stop_thread_check()):
                 break
 
