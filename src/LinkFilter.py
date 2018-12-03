@@ -11,10 +11,10 @@ class LinkFilter(metaclass=abc.ABCMeta):
 
     def test(self):
         print(1)
-        
+
 class LinkFilterStrategyOne(LinkFilter):
     def __init__(self):
-        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram|imgurl|edit')
+        self.__blackList = re.compile('youtube|facebook|www.google.co.kr/search?|mail:to|[a-z]{2}.wikipedia.org|wikimedia.org|wikidata.org|namu.live|downloads|instagram|imgurl|edit|aladin')
         self.__blackListExtension = re.compile('^\S+.(?i)(txt|pdf|hwp|xls|svg|jpg|exe|ftp|tar|xz|pkg|zip)$')
         self.__blackKeywordList = ['로그인']
         self.__whiteList = re.compile('ko.wikipedia.org')
