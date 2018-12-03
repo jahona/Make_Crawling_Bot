@@ -10,15 +10,15 @@ import os
 class Selenium:
     def __init__(self):
         options = webdriver.ChromeOptions()
-        options.add_argument('--disable-extensions')
-        options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--no-sandbox')
+        # options.add_argument('--disable-extensions')
+        # options.add_argument('--headless')
+        # options.add_argument('--disable-gpu')
+        # options.add_argument('--no-sandbox')
 
-        data=open(os.getcwd() + "/.env").read()
-        selenium_path = data.split('\n')[0].split('=')[1]
-        # selenium_path = os.getcwd()+"/chromedriver"
-        self.__driver = webdriver.Chrome(selenium_path, chrome_options=options)
+        # data=open(os.getcwd() + "/.env").read()
+        # selenium_path = data.split('\n')[0].split('=')[1]
+        # # selenium_path = os.getcwd()+"/chromedriver"
+        self.__driver = webdriver.Chrome('/Users/jungbohyuk/dev/store/chromedriver', chrome_options=options)
         # self.__driver.set_page_load_timeout(20)
         pass
 
@@ -28,8 +28,8 @@ class Selenium:
 
     def search_keyword_based_on_google(self, keyword):
         self.go_page('https://www.google.co.kr')
-        self.__driver.find_element_by_id('lst-ib').send_keys(keyword)
-        self.__driver.find_element_by_xpath('//*[@id="tsf"]/div[2]/div[3]/center/input[1]').click()
+        self.__driver.find_element_by_xpath('//*[@id="tsf"]/div[2]/div/div[1]/div/div[1]/input').send_keys(keyword)
+        self.__driver.find_element_by_xpath('//*[@id="tsf"]/div[2]/div/div[3]/center/input[1]').click()
         pass
 
     def get_google_links(self):
