@@ -226,13 +226,13 @@ class Ui_MainWindow(object):
 
 import btnicon_rc
 
-class ProgressBarThread(QThread):
-    change_value = pyqtSignal(int)
+class ProgressBarThread(QtCore.QThread):
+    change_value = QtCore.pyqtSignal(int)
 
     def __init__(self):
-        QThread.__init__(self)
-        self.cond = QWaitCondition()
-        self.mutex = QMutex()
+        QtCore.QThread.__init__(self)
+        self.cond = QtCore.QWaitCondition()
+        self.mutex = QtCore.QMutex()
 
         self.count = 0
 
@@ -240,8 +240,6 @@ class ProgressBarThread(QThread):
         self.wait()
 
     def run(self):
-        count = 0
-
         while True:
             self.mutex.lock()
 

@@ -8,6 +8,7 @@ import Timer
 from enum import Enum
 from time import sleep
 import math
+import abc
 
 class SingletonInstane:
   __instance = None
@@ -28,7 +29,14 @@ class Status(Enum):
     RUNNING = 1 # 동작상태
     STOPING = 2 # 중지상태
 
-class Bot(SingletonInstane):
+class Subject(metaclass=abc.ABCMeta):
+    def __init__(self):
+        self._observer = None
+    
+    def register_observer(self, observer):
+        self._observer = observer
+
+class Bot(SingletonInstane, Subject):
     def __init__(self):
         self.__behavior = CrawlingBehavior.CrawlingBehavior(LinkFilter.LinkFilterStrategyOne())
         self.__status = Status.INITIAL
@@ -72,8 +80,10 @@ class Bot(SingletonInstane):
     def base_vectorize(self, index, link):
         try:
             Basesummarizes = []
-            print(link)
+
             textrank = TextRank.TextRank(link)
+            if(textrank is None):
+                return
             
             summarizes = textrank.summarize(10)
             keywords = textrank.keywords()
@@ -99,9 +109,8 @@ class Bot(SingletonInstane):
 
             self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
             self.__validation.set_dic(index, 0)
-        except Exception as e:
-            print(e)
-            print('textrank not working')
+        except Exception:
+            print('textrank 가 불가능한 링크입니다.')
             return
         
         self.printCommand(index, link, summarizes, keywords)
@@ -112,11 +121,14 @@ class Bot(SingletonInstane):
 
         self.__distanceDict = self.__validation.get_dic()
 
-        self.__observer.resultToGui()
+        self._observer.resultToGui()
 
     def target_vectorize(self, targetIndex, targetLink):
         try:
             textrank = TextRank.TextRank(targetLink)
+            if(textrank is None):
+                return
+
             summarizes = textrank.summarize(10)
             keywords = textrank.keywords()
 
@@ -139,7 +151,7 @@ class Bot(SingletonInstane):
 
             self.__validation.set_dic(targetIndex, distance)
         except:
-            print('textrank not working')
+            print('textrank 가 불가능한 링크입니다.')
             return
 
         self.printCommand(targetIndex, targetLink, summarizes, keywords, distance)
@@ -149,14 +161,11 @@ class Bot(SingletonInstane):
         self.__keywordDict[targetIndex] = keywords
         self.__distanceDict = self.__validation.get_dic()
 
-        self.__observer.resultToGui()
-
-    def register_observer(self, observer):
-        self.__observer = observer
+        self._observer.resultToGui()
 
     def start(self):
         if(self.__keyword == None):
-            print('keyword invalid')
+            print('keyword 가 셋팅되지 않았습니다. 셋팅해주세요')
             return
 
         if(self.__status == Status.STOPING):
@@ -165,7 +174,7 @@ class Bot(SingletonInstane):
         self.__status = Status.RUNNING
         self.__timer.start()
 
-        self.__observer.set_progress_bar(1)
+        self._observer.set_progress_bar(1)
 
         self.__behavior.collect_google_base_links(self.__keyword)
         self.__behavior.collect_internal_links_from_url()
@@ -186,7 +195,7 @@ class Bot(SingletonInstane):
         print('target count : ', targetLinksCount)
 
         for index, node in enumerate(googleLinkNodes):
-            if(self.__observer.stop_thread_check()):
+            if(self._observer.stop_thread_check()):
                 break
 
             self.base_vectorize(index, node.link)
@@ -194,7 +203,7 @@ class Bot(SingletonInstane):
         self.__validation.base_vectorizing()
         
         for index, targetLink in enumerate(targetLinks):
-            if(self.__observer.stop_thread_check()):
+            if(self._observer.stop_thread_check()):
                 break
 
             if index % 100 == 0:
@@ -203,7 +212,7 @@ class Bot(SingletonInstane):
             targetIndex = index + googleLinksCount
 
             # 프로그레스바 값 설정
-            self.__observer.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
+            self._observer.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
 
             self.target_vectorize(targetIndex, targetLink)
 
