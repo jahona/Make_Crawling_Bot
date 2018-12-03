@@ -39,9 +39,11 @@ class SentenceTokenizer(object):
         for idx in range(0, len(sentences)):
             sentences[idx] = sentences[idx].replace("'", "")
             sentences[idx] = sentences[idx].replace('"', "")
-            if len(sentences[idx]) <= 20:
-                sentences[idx-1] += (' ' + sentences[idx])
-                sentences[idx] = ''
+            sentences[idx] = sentences[idx].replace("' ", "")
+            sentences[idx] = sentences[idx].replace('" ', "")
+            # if len(sentences[idx]) <= 20:
+            #     sentences[idx-1] += (' ' + sentences[idx])
+            #     sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
         sentences = list(filter(lambda s: '편집' not in s, sentences))
