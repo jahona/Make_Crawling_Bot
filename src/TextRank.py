@@ -41,6 +41,10 @@ class SentenceTokenizer(object):
             sentences[idx] = sentences[idx].replace('"', "")
             sentences[idx] = sentences[idx].replace("' ", "")
             sentences[idx] = sentences[idx].replace('" ', "")
+
+            if sentences[idx][-2] + sentences[idx][-1] == "다고" or sentences[idx][-1] == "라" or sentences[idx][-1] == "던":
+                sentences[idx] += (' ' + sentences[idx+1])
+                sentences[idx+1] = ''
             # if len(sentences[idx]) <= 20:
             #     sentences[idx-1] += (' ' + sentences[idx])
             #     sentences[idx] = ''

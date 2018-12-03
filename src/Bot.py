@@ -32,7 +32,7 @@ class Status(Enum):
 class Subject(metaclass=abc.ABCMeta):
     def __init__(self):
         self._observer = None
-    
+
     def register_observer(self, observer):
         self._observer = observer
 
@@ -45,7 +45,7 @@ class Bot(SingletonInstane, Subject):
 
         self.init()
         pass
-    
+
     def get_status(self):
         return self.__status
 
@@ -81,7 +81,7 @@ class Bot(SingletonInstane, Subject):
 
     def get_keword(self):
         return self.__keyword
-        
+
     def init(self):
         self.__linkDict = dict()
         self.__sentenceDict = dict()
@@ -102,7 +102,7 @@ class Bot(SingletonInstane, Subject):
             textrank = TextRank.TextRank(link)
             if(textrank is None):
                 return
-            
+
             summarizes = textrank.summarize(10)
             keywords = textrank.keywords()
 
@@ -130,7 +130,7 @@ class Bot(SingletonInstane, Subject):
         except Exception:
             print('textrank 가 불가능한 링크입니다.')
             return
-        
+
         self.printCommand(index, link, summarizes, keywords)
 
         self.__linkDict[index] = link
@@ -214,7 +214,7 @@ class Bot(SingletonInstane, Subject):
             targetLinksCount = len(targetLinks)
 
             print('target count : ', targetLinksCount)
-            
+
             for index, node in enumerate(googleLinkNodes):
                 if(self._observer.stop_thread_check()):
                     break
@@ -222,7 +222,7 @@ class Bot(SingletonInstane, Subject):
                 self.base_vectorize(index, node.link)
 
             self.__validation.base_vectorizing()
-            
+
             for index, targetLink in enumerate(set(targetLinks)):
                 if(self._observer.stop_thread_check()):
                     break
@@ -240,9 +240,10 @@ class Bot(SingletonInstane, Subject):
             self.__timer.end()
             self.__status = Status.STOPING
 
+            print("newspaper 라이브러리")
             print("검색어: " + self.__keyword)
             print("running time: " + str(self.__timer.getTime()))
-            print(targetIndex+1)
+            print("전체 링크수: ",targetIndex+1)
         except Exception:
             return
 
