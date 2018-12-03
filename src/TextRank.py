@@ -37,6 +37,8 @@ class SentenceTokenizer(object):
         # kkma를 이용해 문장단위로 분리하여 배열 리턴
         sentences = self.kkma.sentences(article.text)
         for idx in range(0, len(sentences)):
+            sentences[idx] = sentences[idx].replace("'", "")
+            sentences[idx] = sentences[idx].replace('"', "")
             if len(sentences[idx]) <= 20:
                 sentences[idx-1] += (' ' + sentences[idx])
                 sentences[idx] = ''
@@ -50,6 +52,8 @@ class SentenceTokenizer(object):
     def text2sentences(self, text):
         sentences = self.kkma.sentences(text)
         for idx in range(0, len(sentences)):
+            sentences[idx] = sentences[idx].replace("'", "")
+            sentences[idx] = sentences[idx].replace('"', "")
             if len(sentences[idx]) <= 20:
                 sentences[idx-1] += (' ' + sentences[idx])
                 sentences[idx] = ''
