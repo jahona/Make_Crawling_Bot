@@ -37,12 +37,14 @@ class SentenceTokenizer(object):
         # kkma를 이용해 문장단위로 분리하여 배열 리턴
         sentences = self.kkma.sentences(article.text)
         for idx in range(0, len(sentences)):
+            sentences[idx] = sentences[idx].replace("'", "")
+            sentences[idx] = sentences[idx].replace('"', "")
             if len(sentences[idx]) <= 20:
                 sentences[idx-1] += (' ' + sentences[idx])
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
-        sentences = list(filter(lambda s: '[ 편집 ]' not in s, sentences))
+        sentences = list(filter(lambda s: '편집' not in s, sentences))
 
         return sentences
 
@@ -50,12 +52,14 @@ class SentenceTokenizer(object):
     def text2sentences(self, text):
         sentences = self.kkma.sentences(text)
         for idx in range(0, len(sentences)):
-            if len(sentences[idx]) <= 10:
+            sentences[idx] = sentences[idx].replace("'", "")
+            sentences[idx] = sentences[idx].replace('"', "")
+            if len(sentences[idx]) <= 20:
                 sentences[idx-1] += (' ' + sentences[idx])
                 sentences[idx] = ''
 
         sentences = list(filter(None, sentences)) # fastest
-        sentences = list(filter(lambda s: '[ 편집 ]' not in s, sentences))
+        sentences = list(filter(lambda s: '편집' not in s, sentences))
 
         return sentences
 
@@ -147,7 +151,7 @@ class TextRank(object):
 
             self.word_rank_idx = self.rank.get_ranks(self.words_graph)
             self.sorted_word_rank_idx = sorted(self.word_rank_idx, key=lambda k: self.word_rank_idx[k], reverse=True)
-        except:
+        except Exception:
             print('TextRank 에러 발견 None Type 리턴')
             return None
 
@@ -189,11 +193,12 @@ class TextRank(object):
 
 # 사용방법
 # url = 'https://namu.wiki/w/C(%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%20%EC%96%B8%EC%96%B4)'
+# url = 'https://www.google.co.kr/url?q=https://namu.wiki/w/%EC%BB%A4%ED%94%BC&sa=U&ved=0ahUKEwjCjvil3P7eAhWDd94KHVUqBiwQFggyMAM&usg=AOvVaw2dKEwHV4t0J7vPZi9Qj-Zo'
 # tok = SentenceTokenizer()
 # tok.url2sentences('https://ko.wikipedia.org/wiki/%EC%BB%A4%ED%94%BC')
 # textrank = TextRank(url)
 # for row in textrank.summarize(3):
 #     print(row)
 #     print()
-#
+
 # print('keywords :',textrank.keywords())

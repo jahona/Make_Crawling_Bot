@@ -1,2 +1,4 @@
-Selenium/.env
-Selenium/__pycache__
+src/.env
+src/__pycache__/
+test
+backup
