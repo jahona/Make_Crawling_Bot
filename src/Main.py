@@ -52,6 +52,9 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         # progress bar thread start
         self.get_progressbar_thread.start()
 
+        # exit button
+        self.finishButton.triggered.connect(self.closeEvent)
+
     def stop_thread(self):
         if not self.bot.is_bot_status_running():
             QMessageBox.information(self, 'ALARM', "검색 중 상태가 아닙니다.", QMessageBox.Ok, QMessageBox.Ok)
@@ -65,6 +68,20 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             self.bot.set_bot_status_stopping()
         else:
             return
+
+    def closeEvent(self, event):
+        close = QtWidgets.QMessageBox.question(self,
+                                     "QUIT",
+                                     "Sure?",
+                                      QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        if close == QtWidgets.QMessageBox.Yes:
+            if self.bot.is_bot_status_running():
+                self.__threadStopFlag = True
+                self.__t.join()
+
+            event.accept()
+        else:
+            event.ignore()
 
     def stop_thread_check(self):
         if(self.__threadStopFlag == True):
