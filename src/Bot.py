@@ -109,7 +109,7 @@ class Bot(SingletonInstane, Subject):
 
             self.__validation.sum_str(self.__sentenceTokenizer.get_nouns(Basesummarizes))
             self.__validation.set_dic(index, 0)
-        except Exception as e:
+        except Exception:
             print('textrank 가 불가능한 링크입니다.')
             return
         
