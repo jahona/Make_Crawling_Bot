@@ -295,8 +295,10 @@ class Bot(QMainWindow, MainWindow.Ui_MainWindow):
         self.travelLink(allLinks, len(googleLinks))
 
         t.end()
-
+        print("Selenium")
+        print("검색어: ", self.__keyword)
         print('running time: ', t.getTime())
+        print("전체 링크수: ", len(allLinks))
         pass
 
     def travelLink(self, links, baselength):
