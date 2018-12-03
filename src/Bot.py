@@ -182,66 +182,69 @@ class Bot(SingletonInstane, Subject):
         self._observer.resultToGui()
 
     def start(self):
-        if(self.__keyword == None):
-            print('keyword 가 셋팅되지 않았습니다. 셋팅해주세요')
+        try:
+            if(self.__keyword == None):
+                print('keyword 가 셋팅되지 않았습니다. 셋팅해주세요')
+                return
+
+            if(self.__status == Status.STOPING):
+                self.init()
+
+            self.__status = Status.RUNNING
+            self.__timer.start()
+
+            self._observer.set_progress_bar(1)
+
+            self.__behavior.collect_google_base_links(self.__keyword)
+            self.__behavior.collect_internal_links_from_url()
+            self.__behavior.collect_external_links_from_url()
+
+            googleLinkNodes = Node.GoogleLinkNode.get_nodes()
+
+            internalLinks = []
+            externalLinks = []
+
+            for node in googleLinkNodes:
+                internalLinks += node.get_internal_links()
+                externalLinks += node.get_external_links()
+
+            googleLinksCount = len(googleLinkNodes)
+            targetLinks = internalLinks + externalLinks
+            targetLinks = set(targetLinks)
+            targetLinksCount = len(targetLinks)
+
+            print('target count : ', targetLinksCount)
+            
+            for index, node in enumerate(googleLinkNodes):
+                if(self._observer.stop_thread_check()):
+                    break
+
+                self.base_vectorize(index, node.link)
+
+            self.__validation.base_vectorizing()
+            
+            for index, targetLink in enumerate(set(targetLinks)):
+                if(self._observer.stop_thread_check()):
+                    break
+
+                if index % 100 == 0:
+                    sleep(1)
+
+                targetIndex = index + googleLinksCount
+
+                # 프로그레스바 값 설정
+                self._observer.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
+
+                self.target_vectorize(targetIndex, targetLink)
+
+            self.__timer.end()
+            self.__status = Status.STOPING
+
+            print("검색어: " + self.__keyword)
+            print("running time: " + str(self.__timer.getTime()))
+            print(targetIndex+1)
+        except Exception:
             return
-
-        if(self.__status == Status.STOPING):
-            self.init()
-
-        self.__status = Status.RUNNING
-        self.__timer.start()
-
-        self._observer.set_progress_bar(1)
-
-        self.__behavior.collect_google_base_links(self.__keyword)
-        self.__behavior.collect_internal_links_from_url()
-        self.__behavior.collect_external_links_from_url()
-
-        googleLinkNodes = Node.GoogleLinkNode.get_nodes()
-
-        internalLinks = []
-        externalLinks = []
-
-        for node in googleLinkNodes:
-            internalLinks += node.get_internal_links()
-            externalLinks += node.get_external_links()
-
-        googleLinksCount = len(googleLinkNodes)
-        targetLinks = internalLinks + externalLinks
-        targetLinks = set(targetLinks)
-        targetLinksCount = len(targetLinks)
-
-        print('target count : ', targetLinksCount)
-        
-        for index, node in enumerate(googleLinkNodes):
-            if(self._observer.stop_thread_check()):
-                break
-
-            self.base_vectorize(index, node.link)
-
-        self.__validation.base_vectorizing()
-        
-        for index, targetLink in enumerate(set(targetLinks)):
-            if(self._observer.stop_thread_check()):
-                break
-
-            if index % 100 == 0:
-                sleep(1)
-
-            targetIndex = index + googleLinksCount
-
-            # 프로그레스바 값 설정
-            self._observer.set_progress_bar(int((targetIndex+1)/(targetLinksCount + googleLinksCount)*100))
-
-            self.target_vectorize(targetIndex, targetLink)
-
-        self.__timer.end()
-        self.__status = Status.STOPING
-
-        print("검색어: " + self.__keyword)
-        print("running time: " + str(self.__timer.getTime()))
-        print(targetIndex+1)
 
     def printCommand(self, index, googleLink, summarizes, keywords, distance=None):
         print('----------------------------------')
