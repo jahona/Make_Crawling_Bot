@@ -11,18 +11,18 @@ import math
 import abc
 
 class SingletonInstane:
-  __instance = None
+    __instance = None
 
-  @classmethod
-  def __getInstance(cls):
-    return cls.__instance
+    @classmethod
+    def __getInstance(cls):
+        return cls.__instance
 
-  @classmethod
-  def instance(cls, *args, **kargs):
-    print('create instance')
-    cls.__instance = cls(*args, **kargs)
-    cls.instance = cls.__getInstance
-    return cls.__instance
+    @classmethod
+    def instance(cls, *args, **kargs):
+        print('create instance')
+        cls.__instance = cls(*args, **kargs)
+        cls.instance = cls.__getInstance
+        return cls.__instance
 
 class Status(Enum):
     INITIAL = 0 # 초기상태
@@ -48,6 +48,24 @@ class Bot(SingletonInstane, Subject):
     
     def get_status(self):
         return self.__status
+
+    def is_bot_status_running(self):
+        return self.__status == Status.RUNNING
+
+    def is_bot_status_inital(self):
+        return self.__status == Status.INITIAL
+
+    def is_bot_status_stopping(self):
+        return self.__status == Status.STOPING
+
+    def set_bot_status_running(self):
+        self.__status == Status.RUNNING
+
+    def set_bot_status_inital(self):
+        self.__status == Status.INITIAL
+
+    def set_bot_status_stopping(self):
+        self.__status == Status.STOPING
 
     def get_link_dict(self):
         return self.__linkDict

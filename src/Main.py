@@ -53,7 +53,7 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.get_progressbar_thread.start()
 
     def stop_thread(self):
-        if(self.bot.get_status() != Bot.Status.RUNNING):
+        if not self.bot.is_bot_status_running():
             QMessageBox.information(self, 'ALARM', "검색 중 상태가 아닙니다.", QMessageBox.Ok, QMessageBox.Ok)
             return
 
@@ -62,7 +62,7 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         if reply == QMessageBox.Yes:
             self.__threadStopFlag = True
             self.__t.join()
-            self.bot.__status = Bot.Status.STOPING
+            self.bot.set_bot_status_stopping()
         else:
             return
 
@@ -92,7 +92,7 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             contents = ""
             contents += "keyword\n"
 
-            if(self.bot.get_status() == Bot.Status.STOPING and findkeyword is not None and findkeyword is not ''):
+            if(self.bot.is_bot_status_stopping() and findkeyword is not None and findkeyword is not ''):
                 if findkeyword not in keywordDict[i]:
                     continue
 
@@ -132,7 +132,7 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             webbrowser.open(self.tableWidget.item(item.row(), item.column()).text())
 
     def btnSearchClickEvent(self):
-        if(self.bot.get_status() == Bot.Status.RUNNING):
+        if self.bot.is_bot_status_running():
             QMessageBox.information(self, 'ALARM', "이미 검색 중입니다.", QMessageBox.Ok, QMessageBox.Ok)
             return
 
@@ -153,8 +153,8 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
             return
 
     def btnFindClickEvent(self):
-        if(self.bot.get_status() != Bot.Status.STOPING):
-            print('do not execute find')
+        if not self.bot.is_bot_status_stopping():
+            QMessageBox.information(self, 'ALARM', "검색 중입니다. 중지 후 눌러주세요", QMessageBox.Ok, QMessageBox.Ok)
             return False
 
         findkeyword = self.lineEdit_2.text()
@@ -181,7 +181,8 @@ class Main(QtWidgets.QMainWindow, MainWindow.Ui_MainWindow):
         self.get_progressbar_thread.setValue(percent)
 
     def save_File(self):
-        if(self.bot.get_status() != Bot.Status.STOPING):
+        if self.bot.is_bot_status_running():
+            QMessageBox.information(self, 'ALARM', "검색 중입니다. 중지 후 저장을 눌러주세요", QMessageBox.Ok, QMessageBox.Ok)
             return
 
         reply = QMessageBox.question(self, 'SAVE', "결과를 저장하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
