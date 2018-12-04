@@ -34,20 +34,27 @@ class SentenceTokenizer(object):
         article.download()
         article.parse()
 
-        # kkma를 이용해 문장단위로 분리하여 배열 리턴
-        sentences = self.kkma.sentences(article.text)
-        for idx in range(0, len(sentences)):
-            sentences[idx] = sentences[idx].replace("'", "")
-            sentences[idx] = sentences[idx].replace('"', "")
-            sentences[idx] = sentences[idx].replace("' ", "")
-            sentences[idx] = sentences[idx].replace('" ', "")
-
-            if sentences[idx][-2] + sentences[idx][-1] == "다고" or sentences[idx][-1] == "라" or sentences[idx][-1] == "던":
+        try:
+            # kkma를 이용해 문장단위로 분리하여 배열 리턴
+            sentences = self.kkma.sentences(article.text)
+            for idx in range(0, len(sentences)):
+                sentences[idx] = sentences[idx].replace("'", "")
+                sentences[idx] = sentences[idx].replace('"', "")
+                sentences[idx] = sentences[idx].replace("' ", "")
+                sentences[idx] = sentences[idx].replace('" ', "")
+        except Exception:
+            print("kkma 문장 분리 실패")
+            return
+        try:
+            if sentences[idx][-2] + sentences[idx][-1] == "다고" or sentences[idx][-1] == "라" or sentences[idx][-1] == "던" or sentences[idx][-1] == "냐" or sentences[idx][-1] == "가"  or sentences[idx][-1] == ",":
                 sentences[idx] += (' ' + sentences[idx+1])
                 sentences[idx+1] = ''
-            # if len(sentences[idx]) <= 20:
-            #     sentences[idx-1] += (' ' + sentences[idx])
-            #     sentences[idx] = ''
+                # if len(sentences[idx]) <= 20:
+                #     sentences[idx-1] += (' ' + sentences[idx])
+                #     sentences[idx] = ''
+        except Exception:
+            print("22222222222222222222")
+            return
 
         sentences = list(filter(None, sentences)) # fastest
         sentences = list(filter(lambda s: '편집' not in s, sentences))
