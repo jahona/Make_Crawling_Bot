@@ -22,6 +22,11 @@ class LinkFilterStrategyOne(LinkFilter):
     def _filter(self, link):
         stlink = str(link)
 
+        m = self.__whiteList.search(stlink)
+        # 화이트 리스트에 있다면 필터하지 않기
+        if(m != None):
+            return False
+            
         m = self.__blackListExtension.search(stlink)
         if(m != None):
             return True
@@ -30,11 +35,6 @@ class LinkFilterStrategyOne(LinkFilter):
         m = self.__blackList.search(stlink)
         if(m != None):
             return True
-
-        m = self.__whiteList.search(stlink)
-        # 화이트 리스트에 있다면 필터하지 않기
-        if(m != None):
-            return False
 
         # 아무것도 포함되지 않는다면 필터하지 않기
         return False
