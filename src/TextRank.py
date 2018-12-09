@@ -30,30 +30,36 @@ class SentenceTokenizer(object):
 
     # url 주소를 받아 기사내용 추출.
     def url2sentences(self, url):
-        article = Article(url, language='ko') # newpaper
-        article.download()
-        article.parse()
+        try:
+            article = Article(url, language='ko') # newpaper
+            article.download()
+            article.parse()
+        except Exception as e:
+            print(e)
+            print('Article 호출 실패')
+            return
 
         try:
             # kkma를 이용해 문장단위로 분리하여 배열 리턴
             sentences = self.kkma.sentences(article.text)
-            for idx in range(0, len(sentences)):
+            slen = len(sentences)
+            for idx in range(0, slen):
                 sentences[idx] = sentences[idx].replace("'", "")
                 sentences[idx] = sentences[idx].replace('"', "")
                 sentences[idx] = sentences[idx].replace("' ", "")
                 sentences[idx] = sentences[idx].replace('" ', "")
-        except Exception:
-            print("kkma 문장 분리 실패")
-            return
-        try:
-            if sentences[idx][-2] + sentences[idx][-1] == "다고" or sentences[idx][-1] == "라" or sentences[idx][-1] == "던" or sentences[idx][-1] == "냐" or sentences[idx][-1] == "가"  or sentences[idx][-1] == ",":
-                sentences[idx] += (' ' + sentences[idx+1])
-                sentences[idx+1] = ''
-                # if len(sentences[idx]) <= 20:
-                #     sentences[idx-1] += (' ' + sentences[idx])
-                #     sentences[idx] = ''
-        except Exception:
-            print("22222222222222222222")
+
+                if(sentences[idx] == ''):
+                    continue
+
+                if sentences[idx][-2] + sentences[idx][-1] == "다고" or sentences[idx][-2] + sentences[idx][-1] == "라고" or sentences[idx][-2] + sentences[idx][-1] == "하네" or sentences[idx][-2] + sentences[idx][-1] == "다니" or sentences[idx][-2] + sentences[idx][-1] == "데다" or sentences[idx][-2] + sentences[idx][-1] == "밀리" or sentences[idx][-2] + sentences[idx][-1] == "았어" or sentences[idx][-1] == "라" or sentences[idx][-1] == "던" or sentences[idx][-1] == "냐" or sentences[idx][-1] == "가" or sentences[idx][-1] == "," or sentences[idx][-1] == "걸":
+                    if(slen > idx + 1):
+                        sentences[idx+1] = sentences[idx] + (' ' + sentences[idx+1])
+                        sentences[idx] = ''
+                    pass
+        except Exception as e:
+            print(e)
+            print('kkma 문장 분리 실패')
             return
 
         sentences = list(filter(None, sentences)) # fastest
@@ -63,13 +69,27 @@ class SentenceTokenizer(object):
 
     # text 를 입력받아 문장단위로 분리하여 배열 리턴
     def text2sentences(self, text):
-        sentences = self.kkma.sentences(text)
-        for idx in range(0, len(sentences)):
-            sentences[idx] = sentences[idx].replace("'", "")
-            sentences[idx] = sentences[idx].replace('"', "")
-            if len(sentences[idx]) <= 20:
-                sentences[idx-1] += (' ' + sentences[idx])
-                sentences[idx] = ''
+        try:
+            sentences = self.kkma.sentences(text)
+            slen = len(sentences)
+            for idx in range(0, slen):
+                sentences[idx] = sentences[idx].replace("'", "")
+                sentences[idx] = sentences[idx].replace('"', "")
+                sentences[idx] = sentences[idx].replace("' ", "")
+                sentences[idx] = sentences[idx].replace('" ', "")
+
+                if(sentences[idx] == ''):
+                    continue
+
+                if sentences[idx][-2] + sentences[idx][-1] == "다고" or sentences[idx][-1] == "라" or sentences[idx][-1] == "던" or sentences[idx][-1] == "냐" or sentences[idx][-1] == "가"  or sentences[idx][-1] == ",":
+                    if(slen > idx + 1):
+                        sentences[idx] += (' ' + sentences[idx+1])
+                        sentences[idx+1] = ''
+                    pass
+        except Exception as e:
+            print(e)
+            print('text kkma 문장 분리 실패')
+            return
 
         sentences = list(filter(None, sentences)) # fastest
         sentences = list(filter(lambda s: '편집' not in s, sentences))
@@ -208,7 +228,7 @@ class TextRank(object):
 # url = 'https://namu.wiki/w/C(%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%20%EC%96%B8%EC%96%B4)'
 # url = 'https://www.google.co.kr/url?q=https://namu.wiki/w/%EC%BB%A4%ED%94%BC&sa=U&ved=0ahUKEwjCjvil3P7eAhWDd94KHVUqBiwQFggyMAM&usg=AOvVaw2dKEwHV4t0J7vPZi9Qj-Zo'
 # tok = SentenceTokenizer()
-# tok.url2sentences('https://ko.wikipedia.org/wiki/%EC%BB%A4%ED%94%BC')
+# tok.url2sentences('https://namu.wiki/w/%EC%BB%A4%ED%94%BC')
 # textrank = TextRank(url)
 # for row in textrank.summarize(3):
 #     print(row)
